@@ -1,8 +1,6 @@
-use ggez::{Context, ContextBuilder, GameResult};
-use ggez::event::{self, EventHandler};
+use ggez::{ ContextBuilder, GameResult};
+use ggez::event::{self};
 use ggez::conf::WindowMode;
-use ggez::input::keyboard::{KeyCode, KeyInput};
-use ggez::graphics::{self, Canvas, Color, DrawMode, Mesh, Text, DrawParam};
 
 mod game;
 mod player;

@@ -1,11 +1,13 @@
-use ggez::{Context, GameResult};
 use ggez::event::EventHandler;
-use ggez::graphics::{self, DrawMode, Color, Mesh, Text};
+use ggez::graphics::{ DrawMode,  Mesh};
 use crate::player::Player;
 use crate::enemy::Enemy;
 use crate::grid::{GRID_WIDTH, GRID_HEIGHT};
 use ggez::graphics::DrawParam;
 use ggez::input::keyboard::{KeyCode, KeyInput};
+use crate::grid;
+use crate::utils;
+use crate::enemy;
 
 
 #[derive(PartialEq)]
@@ -25,23 +27,9 @@ pub struct Game {
 
 impl Game {
     pub fn new() -> Self {
-        let mut enemies = Vec::new();
-        let predefined_positions = [(100.0, 100.0), (300.0, 200.0), (500.0, 150.0)];
-        let predefined_velocities = [(1.0, -0.5), (-1.0, 0.0), (0.5, 0.0)];
-        for i in 0..3 {
-            enemies.push(Enemy {
-                pos: predefined_positions[i],
-                velocity: predefined_velocities[i],
-            });
-        }
+        let enemies = enemy::create_enemies();
 
-        let mut grid = [[false; GRID_WIDTH]; GRID_HEIGHT];
-        for x in 5..10 {
-            grid[16][x] = true;
-        }
-        for y in 5..8 {
-            grid[y][15] = true;
-        }
+        let grid = grid::create_grid();
 
         Game {
             state: GameState::Menu,
@@ -57,15 +45,10 @@ impl Game {
         self.player = Player::new(400.0, 240.0);
     }
 
-    pub fn check_collision(&self, x: f32, y: f32) -> bool {
-        let grid_x = (x / 25.0) as usize;
-        let grid_y = (y / 25.0) as usize;
-        self.grid[grid_y][grid_x]
-    }
 }
 
 impl EventHandler for Game {
-    fn update(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
+    fn update(&mut self, _: &mut ggez::Context) -> ggez::GameResult {
         match self.state {
             GameState::Menu => {
                 // Menu logic
@@ -74,7 +57,7 @@ impl EventHandler for Game {
                 self.player.update_position();
                 self.enemies.iter_mut().for_each(|enemy| enemy.update(&self.grid));
 
-                if self.check_collision(self.player.pos.0, self.player.pos.1 + 15.0) {
+                if utils::check_collision(&self.grid,self.player.pos.0, self.player.pos.1 + 15.0) {
                     self.player.velocity.1 = 0.0;
                 } else {
                     self.player.velocity.1 += 0.5; // gravity
@@ -212,6 +195,16 @@ impl EventHandler for Game {
                     }
                 }
                 _ => {}
+            }
+        }
+        Ok(())
+    }
+    fn key_up_event(&mut self, _: &mut ggez::Context, input: KeyInput)->ggez::GameResult {
+        if let Some(keycode) = input.keycode {
+            if self.state == GameState::Play {
+                if keycode == KeyCode::Left || keycode == KeyCode::Right {
+                    self.player.velocity.0 = 0.0;
+                }
             }
         }
         Ok(())
