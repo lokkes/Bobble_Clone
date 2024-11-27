@@ -1,13 +1,13 @@
 use ggez::event::EventHandler;
-use ggez::graphics::{ DrawMode,  Mesh};
-use crate::player::Player;
-use crate::enemy::Enemy;
+use ggez::graphics::{ DrawMode,  Mesh, DrawParam};
 use crate::grid::{GRID_WIDTH, GRID_HEIGHT};
-use ggez::graphics::DrawParam;
 use ggez::input::keyboard::{KeyCode, KeyInput};
+use crate::player;
 use crate::grid;
 use crate::utils;
 use crate::enemy;
+use crate::bullet;
+use ggez::graphics;
 
 
 #[derive(PartialEq)]
@@ -20,21 +20,20 @@ pub enum GameState {
 pub struct Game {
     pub state: GameState,
     pub score: i32,
-    pub player: Player,
-    pub enemies: Vec<Enemy>,
+    pub player: player::Player,
+    pub enemies: Vec<enemy::Enemy>,
     pub grid: [[bool; GRID_WIDTH]; GRID_HEIGHT],
 }
 
 impl Game {
     pub fn new() -> Self {
         let enemies = enemy::create_enemies();
-
         let grid = grid::create_grid();
 
         Game {
             state: GameState::Menu,
             score: 0,
-            player: Player::new(400.0, 240.0),
+            player: player::Player::new(400.0, 240.0),
             enemies,
             grid,
         }
@@ -42,13 +41,13 @@ impl Game {
 
     pub fn reset(&mut self) {
         self.score = 0;
-        self.player = Player::new(400.0, 240.0);
+        self.player = player::Player::new(400.0, 240.0);
     }
 
 }
 
 impl EventHandler for Game {
-    fn update(&mut self, _: &mut ggez::Context) -> ggez::GameResult {
+    fn update(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         match self.state {
             GameState::Menu => {
                 // Menu logic
@@ -96,58 +95,12 @@ impl EventHandler for Game {
                 );
             }
             GameState::Play => {
-                for y in 0..GRID_HEIGHT {
-                    for x in 0..GRID_WIDTH {
-                        if self.grid[y][x] {
-                            let block = Mesh::new_rectangle(
-                                ctx,
-                                DrawMode::fill(),
-                                ggez::graphics::Rect::new_i32(
-                                    (x as i32) * 25,
-                                    (y as i32) * 25,
-                                    25,
-                                    25,
-                                ),
-                                ggez::graphics::Color::from_rgb(100, 100, 255),
-                            )?;
-                            canvas.draw(&block, DrawParam::default());
-                        }
-                    }
-                }
+                let _=grid::draw(&mut canvas, self, ctx);
+   
+                let _=player::Player::draw(&mut canvas, self, ctx);
 
-                let player_mesh = Mesh::new_circle(
-                    ctx,
-                    DrawMode::fill(),
-                    ggez::mint::Point2 { x: 0.0, y: 0.0 },
-                    15.0,
-                    0.1,
-                    ggez::graphics::Color::from_rgb(255, 255, 255),
-                )?;
-                canvas.draw(
-                    &player_mesh,
-                    DrawParam::default().dest(ggez::mint::Point2 {
-                        x: self.player.pos.0,
-                        y: self.player.pos.1,
-                    }),
-                );
-
-                for enemy in &self.enemies {
-                    let enemy_mesh = Mesh::new_circle(
-                        ctx,
-                        DrawMode::fill(),
-                        ggez::mint::Point2 { x: 0.0, y: 0.0 },
-                        15.0,
-                        0.1,
-                        ggez::graphics::Color::from_rgb(255, 0, 0),
-                    )?;
-                    canvas.draw(
-                        &enemy_mesh,
-                        DrawParam::default().dest(ggez::mint::Point2 {
-                            x: enemy.pos.0,
-                            y: enemy.pos.1,
-                        }),
-                    );
-                }
+                let _=enemy::Enemy::draw(&mut canvas, self, ctx);
+            
 
                 let score_text = ggez::graphics::Text::new(format!("Score: {}", self.score));
                 canvas.draw(
@@ -177,7 +130,7 @@ impl EventHandler for Game {
                         self.state = GameState::Menu;
                         self.reset();
                     }
-                    _ => {}
+                    _=>{}
                 },
                 KeyCode::Left => {
                     if self.state == GameState::Play {
