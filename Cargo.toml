@@ -5,3 +5,7 @@ edition = "2021"
 
 [dependencies]
 ggez = "0.9.3"
+
+[package.metadata.ggez]
+resources = "resources"
+

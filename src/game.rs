@@ -22,20 +22,27 @@ pub struct Game {
     pub score: i32,
     pub player: player::Player,
     pub enemies: Vec<enemy::Enemy>,
+    pub bullets: Vec<bullet::Bullet>,
     pub grid: [[bool; GRID_WIDTH]; GRID_HEIGHT],
+    pub enemy_spawn_timer: f32, 
+    pub player_image: graphics::Image, 
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(ctx: &mut ggez::Context) -> Self {
         let enemies = enemy::create_enemies();
         let grid = grid::create_grid();
+        let player_image = graphics::Image::from_path(ctx, "/still.png").unwrap();
 
         Game {
             state: GameState::Menu,
             score: 0,
             player: player::Player::new(400.0, 240.0),
             enemies,
+            bullets: vec![],
             grid,
+            enemy_spawn_timer: 10.0,
+            player_image
         }
     }
 
@@ -53,6 +60,26 @@ impl EventHandler for Game {
                 // Menu logic
             }
             GameState::Play => {
+                let delta_time = ctx.time.delta().as_secs_f32();
+                // Timer aktualisieren
+                self.enemy_spawn_timer -= delta_time;
+
+                if self.enemy_spawn_timer <= 0.0 {
+                    // Füge einen neuen Gegner hinzu
+                    self.enemies.push(enemy::Enemy {
+                        pos: (100.0 + self.enemies.len() as f32 * 50.0, 100.0), // Beispielposition
+                        velocity: (1.0, 0.0), // Beispielgeschwindigkeit
+                    });
+                
+                    // Timer zurücksetzen
+                    self.enemy_spawn_timer = 10.0;
+                }
+            
+                // Aktualisiere bestehende Gegner
+                for enemy in &mut self.enemies {
+                    enemy.update(&self.grid);
+                }
+
                 self.player.update_position();
                 self.enemies.iter_mut().for_each(|enemy| enemy.update(&self.grid));
 
@@ -75,6 +102,31 @@ impl EventHandler for Game {
                         self.state = GameState::GameOver;
                     }
                 }
+
+                for bullet in &mut self.bullets {
+                    bullet.update();
+                }
+                // Entferne Kugeln, die aus dem Bildschirm verschwinden
+                self.bullets.retain(|bullet| !bullet.is_off_screen());
+                for bullet in &self.bullets {
+                    self.enemies.retain(|enemy| {
+                        let collision = (bullet.pos.0 - enemy.pos.0).abs() < 15.0
+                            && (bullet.pos.1 - enemy.pos.1).abs() < 15.0;
+            
+                        if collision {
+                            self.score += 10; // Punkte hinzufügen
+                        }
+            
+                        !collision // Entferne den Gegner, wenn eine Kollision vorliegt
+                    });
+                }
+                // Entferne getroffene Kugeln
+                self.bullets.retain(|bullet| {
+                    !self.enemies.iter().any(|enemy| {
+                        (bullet.pos.0 - enemy.pos.0).abs() < 15.0
+                            && (bullet.pos.1 - enemy.pos.1).abs() < 15.0
+                    })
+                });
             }
             GameState::GameOver => {
                 // Game Over logic
@@ -97,7 +149,7 @@ impl EventHandler for Game {
             GameState::Play => {
                 let _=grid::draw(&mut canvas, self, ctx);
    
-                let _=player::Player::draw(&mut canvas, self, ctx);
+                let _=player::Player::draw(&mut canvas, self);
 
                 let _=enemy::Enemy::draw(&mut canvas, self, ctx);
             
@@ -107,6 +159,24 @@ impl EventHandler for Game {
                     &score_text,
                     DrawParam::default().dest(ggez::mint::Point2 { x: 10.0, y: 10.0 }),
                 );
+
+                for bullet in &self.bullets {
+                    let bullet_mesh = Mesh::new_circle(
+                        ctx,
+                        DrawMode::fill(),
+                        ggez::mint::Point2 { x: 0.0, y: 0.0 },
+                        5.0,
+                        0.1,
+                        ggez::graphics::Color::from_rgb(255, 255, 0), // Gelbe Kugeln
+                    )?;
+                    canvas.draw(
+                        &bullet_mesh,
+                        DrawParam::default().dest(ggez::mint::Point2 {
+                            x: bullet.pos.0,
+                            y: bullet.pos.1,
+                        }),
+                    );
+                }
             }
             GameState::GameOver => {
                 let over_text = ggez::graphics::Text::new("Game Over! Press SPACE to Restart");
@@ -130,7 +200,15 @@ impl EventHandler for Game {
                         self.state = GameState::Menu;
                         self.reset();
                     }
-                    _=>{}
+                    GameState::Play => {
+                        if self.state == GameState::Play {
+                            // Kugel erstellen
+                            self.bullets.push(bullet::Bullet {
+                                pos: (self.player.pos.0, self.player.pos.1 - 10.0), // Startposition über dem Spieler
+                                velocity: (0.0, -5.0), // Bewegung nach oben
+                            });
+                        }
+                    }
                 },
                 KeyCode::Left => {
                     if self.state == GameState::Play {
