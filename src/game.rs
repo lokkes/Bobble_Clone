@@ -24,6 +24,7 @@ pub struct Game {
     pub grid: [[bool; GRID_WIDTH]; GRID_HEIGHT],
     pub enemy_spawn_timer: f32,
     pub player_image: graphics::Image,
+    pub grid_image:graphics::Image
 }
 
 impl Game {
@@ -31,6 +32,7 @@ impl Game {
         let enemies = enemy::create_enemies();
         let grid = grid::create_grid();
         let player_image = graphics::Image::from_path(ctx, "/still.png").unwrap();
+        let grid_image= graphics::Image::from_path(ctx, "/block0.png").unwrap();
 
         Game {
             state: GameState::Menu,
@@ -41,6 +43,7 @@ impl Game {
             grid,
             enemy_spawn_timer: 10.0,
             player_image,
+            grid_image,
         }
     }
 
