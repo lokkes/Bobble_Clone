@@ -1,6 +1,6 @@
-use crate::grid::{GRID_WIDTH, GRID_HEIGHT,BLOCK_SIZE};
+use crate::grid::{ GRID_WIDTH, GRID_HEIGHT, BLOCK_SIZE };
 
-pub fn check_collision(grid: &[[bool; GRID_WIDTH]; GRID_HEIGHT],x: f32, y: f32, ) -> bool {
+pub fn check_collision(grid: &[[bool; GRID_WIDTH]; GRID_HEIGHT], x: f32, y: f32) -> bool {
     let grid_x = (x / BLOCK_SIZE) as usize;
     let grid_y = (y / BLOCK_SIZE) as usize;
 

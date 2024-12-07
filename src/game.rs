@@ -23,16 +23,30 @@ pub struct Game {
     pub bullets: Vec<bullet::Bullet>,
     pub grid: [[bool; GRID_WIDTH]; GRID_HEIGHT],
     pub enemy_spawn_timer: f32,
-    pub player_image: graphics::Image,
-    pub grid_image:graphics::Image
+    pub player_images: Vec<graphics::Image>,
+    pub player_state: player::PlayerState,
+    pub current_frame: usize,
+    pub frame_timer: f32,
+    pub grid_image: graphics::Image,
 }
 
 impl Game {
     pub fn new(ctx: &mut ggez::Context) -> Self {
         let enemies = enemy::create_enemies();
         let grid = grid::create_grid();
-        let player_image = graphics::Image::from_path(ctx, "/still.png").unwrap();
-        let grid_image= graphics::Image::from_path(ctx, "/block0.png").unwrap();
+        let player_images = vec![
+            graphics::Image::from_path(ctx, "/still.png").unwrap(),
+            graphics::Image::from_path(ctx, "/run00.png").unwrap(),
+            graphics::Image::from_path(ctx, "/run01.png").unwrap(),
+            graphics::Image::from_path(ctx, "/run02.png").unwrap(),
+            graphics::Image::from_path(ctx, "/run03.png").unwrap(),
+            graphics::Image::from_path(ctx, "/run10.png").unwrap(),
+            graphics::Image::from_path(ctx, "/run11.png").unwrap(),
+            graphics::Image::from_path(ctx, "/run12.png").unwrap(),
+            graphics::Image::from_path(ctx, "/run13.png").unwrap(),
+            graphics::Image::from_path(ctx, "/jump0.png").unwrap()
+        ];
+        let grid_image = graphics::Image::from_path(ctx, "/block0.png").unwrap();
 
         Game {
             state: GameState::Menu,
@@ -42,8 +56,11 @@ impl Game {
             bullets: vec![],
             grid,
             enemy_spawn_timer: 10.0,
-            player_image,
+            player_images,
+            player_state: player::PlayerState::Idle,
             grid_image,
+            current_frame: 0,
+            frame_timer: 0.0,
         }
     }
 
@@ -68,8 +85,8 @@ impl EventHandler for Game {
                 if self.enemy_spawn_timer <= 0.0 {
                     // Füge einen neuen Gegner hinzu
                     self.enemies.push(enemy::Enemy {
-                        pos: (100.0 + (self.enemies.len() as f32) * 50.0, 100.0), // Beispielposition
-                        velocity: (1.0, 0.0), // Beispielgeschwindigkeit
+                        pos: (100.0 + (self.enemies.len() as f32) * 50.0, 100.0),
+                        velocity: (1.0, 0.0),
                     });
 
                     // Timer zurücksetzen
@@ -81,7 +98,8 @@ impl EventHandler for Game {
                     enemy.update(&self.grid);
                 }
 
-                self.player.update_position(&self.grid);
+                player::Player::update_position(self, ctx);
+                // self.player.update_position();
                 self.enemies.iter_mut().for_each(|enemy| enemy.update(&self.grid));
 
                 if self.player.pos.1 > 460.0 {
@@ -120,7 +138,6 @@ impl EventHandler for Game {
                     });
                     !hit_enemy
                 });
-               
             }
             GameState::GameOver => {
                 // Game Over logic
@@ -143,7 +160,7 @@ impl EventHandler for Game {
                 );
             }
             GameState::Play => {
-                let _ = grid::draw(&mut canvas, self, ctx);
+                let _ = grid::draw(&mut canvas, self);
 
                 let _ = player::Player::draw(&mut canvas, self);
 
@@ -204,18 +221,16 @@ impl EventHandler for Game {
                             self.reset();
                         }
                         GameState::Play => {
-                            if self.state == GameState::Play {
-                                // Kugel erstellen
-                                let velocity = if self.player.view_right {
-                                    (1.0, 0.0)
-                                } else {
-                                    (-1.0, 0.0)
-                                };
-                                self.bullets.push(bullet::Bullet {
-                                    pos: (self.player.pos.0, self.player.pos.1 - 10.0),
-                                    velocity,
-                                });
-                            }
+                            // Kugel erstellen
+                            let velocity = if self.player.view_right {
+                                (1.0, 0.0)
+                            } else {
+                                (-1.0, 0.0)
+                            };
+                            self.bullets.push(bullet::Bullet {
+                                pos: (self.player.pos.0, self.player.pos.1 - 10.0),
+                                velocity,
+                            });
                         }
                     }
                 KeyCode::Left => {
@@ -230,7 +245,7 @@ impl EventHandler for Game {
                 }
                 KeyCode::Up => {
                     if self.state == GameState::Play {
-                        self.player.velocity.1 = -10.0;
+                        self.player.velocity.1 = -11.0;
                     }
                 }
                 _ => {}
