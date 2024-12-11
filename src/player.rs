@@ -1,6 +1,6 @@
 use crate::grid::{ GRID_WIDTH, GRID_HEIGHT, BLOCK_SIZE };
 use ggez::graphics::DrawParam;
-use crate::utils::check_collision;
+use crate::utils::check_collision_player;
 use crate::game::Game;
 
 #[derive(PartialEq)]
@@ -40,9 +40,7 @@ impl Player {
         if
             next_x <= 0.0 ||
             next_x >= (GRID_WIDTH as f32) * BLOCK_SIZE - BLOCK_SIZE ||
-            check_collision(&game.grid, next_x, game.player.pos.1 + 15.0) ||
-            check_collision(&game.grid, next_x + BLOCK_SIZE, game.player.pos.1 + 15.0) ||
-            check_collision(&game.grid, next_x - BLOCK_SIZE, game.player.pos.1 + 15.0)
+            check_collision_player(&game.grid, next_x, game.player.pos.1 + 15.0)
         {
             game.player.velocity.0 = 0.0;
         } else {
@@ -53,7 +51,7 @@ impl Player {
         let next_y = game.player.pos.1 + game.player.velocity.1;
         if
             next_y > (GRID_HEIGHT as f32) * BLOCK_SIZE ||
-            (check_collision(&game.grid, game.player.pos.0, next_y + 15.0) &&
+            (check_collision_player(&game.grid, game.player.pos.0, next_y + 15.0) &&
                 game.player.velocity.1 >= 0.0)
         {
             game.player.velocity.1 = 0.0; // Gravitation stoppen
