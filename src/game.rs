@@ -1,6 +1,6 @@
 use ggez::event::EventHandler;
 use ggez::graphics::{ DrawMode, Mesh, DrawParam };
-use crate::grid::{ GRID_WIDTH, GRID_HEIGHT };
+use crate::grid::{ GridConfig, GRID_HEIGHT, GRID_WIDTH };
 use ggez::input::keyboard::{ KeyCode, KeyInput };
 use crate::player;
 use crate::grid;
@@ -32,8 +32,30 @@ pub struct Game {
 
 impl Game {
     pub fn new(ctx: &mut ggez::Context) -> Self {
+        let level1_config = GridConfig {
+            vertical_lines: vec![
+                (0, 0, GRID_HEIGHT),
+                (1, 0, GRID_HEIGHT),
+                (GRID_WIDTH - 2, 0, GRID_HEIGHT),
+                (GRID_WIDTH - 1, 0, GRID_HEIGHT)
+            ],
+            horizontal_lines: vec![
+                (0, 1, 8), // Top line
+                (0, 12, 20),
+                (0, 24, 32),
+                (9, 5, 27), // Middle line
+                (17, 1, 8), // Bottom lines
+                (17, 12, 20),
+                (17, 24, 32),
+                (13, 1, 11), // Bottom middle blocks
+                (13, 21, 32),
+                (5, 5, 10), // Floating block above middle platform
+                (5, 22, 27) // Another floating block
+            ],
+        };
+
         let enemies = enemy::create_enemies();
-        let grid = grid::create_grid();
+        let grid = grid::create_grid(&level1_config);
         let player_images = vec![
             graphics::Image::from_path(ctx, "/still.png").unwrap(),
             graphics::Image::from_path(ctx, "/run00.png").unwrap(),
