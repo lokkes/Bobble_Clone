@@ -52,7 +52,7 @@ impl Player {
         if
             next_y > (GRID_HEIGHT as f32) * BLOCK_SIZE ||
             (check_collision_player(&game.grid, game.player.pos.0, next_y + 15.0) &&
-                game.player.velocity.1 >= 0.0)
+                game.player.velocity.1 >= 0.0)||next_y < BLOCK_SIZE
         {
             game.player.velocity.1 = 0.0; // Gravitation stoppen
         } else {

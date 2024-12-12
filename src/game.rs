@@ -273,7 +273,9 @@ impl EventHandler for Game {
                 }
                 KeyCode::Up => {
                     if self.state == GameState::Play {
-                        self.player.velocity.1 = -11.0;
+                        if self.player.velocity.1 == 0.0 {
+                            self.player.velocity.1 = -11.0;
+                        }
                     }
                 }
                 _ => {}
