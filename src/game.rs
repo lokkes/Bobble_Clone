@@ -28,6 +28,7 @@ pub struct Game {
     pub current_frame: usize,
     pub frame_timer: f32,
     pub grid_image: graphics::Image,
+    pub press_space_image: graphics::Image,
 }
 
 impl Game {
@@ -54,7 +55,7 @@ impl Game {
             ],
         };
 
-        let enemies = enemy::create_enemies();
+        let enemies = enemy::create_enemies(ctx);
         let grid = grid::create_grid(&level1_config);
         let player_images = vec![
             graphics::Image::from_path(ctx, "/still.png").unwrap(),
@@ -69,6 +70,8 @@ impl Game {
             graphics::Image::from_path(ctx, "/jump0.png").unwrap()
         ];
         let grid_image = graphics::Image::from_path(ctx, "/block0.png").unwrap();
+        let press_space_image = graphics::Image::from_path(ctx, "/space1.png").unwrap();
+
 
         Game {
             state: GameState::Menu,
@@ -83,13 +86,14 @@ impl Game {
             grid_image,
             current_frame: 0,
             frame_timer: 0.0,
+            press_space_image,
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, ctx: &mut ggez::Context) {
         self.score = 0;
         self.player = player::Player::new(400.0, 240.0);
-        self.enemies = enemy::create_enemies();
+        self.enemies = enemy::create_enemies(ctx);
     }
 }
 
@@ -109,6 +113,8 @@ impl EventHandler for Game {
                     self.enemies.push(enemy::Enemy {
                         pos: (100.0 + (self.enemies.len() as f32) * 50.0, 100.0),
                         velocity: (1.0, 0.0),
+                        left_image: ggez::graphics::Image::from_path(ctx, "/robot000.png").unwrap(),
+                        right_image: ggez::graphics::Image::from_path(ctx, "/robot010.png").unwrap(),
                     });
 
                     // Timer zurücksetzen
@@ -175,11 +181,11 @@ impl EventHandler for Game {
 
         match self.state {
             GameState::Menu => {
-                let menu_text = ggez::graphics::Text::new("Press SPACE to Start");
+              
                 canvas.draw(
-                    &menu_text,
-                    DrawParam::default().dest(ggez::mint::Point2 { x: 300.0, y: 200.0 })
-                );
+                    &self.press_space_image,
+                    DrawParam::default().dest(ggez::mint::Point2 { x: 150.0, y: 150.0 }) // Adjust position if needed
+                ); 
             }
             GameState::Play => {
                 let _ = grid::draw(&mut canvas, self);
@@ -227,7 +233,7 @@ impl EventHandler for Game {
 
     fn key_down_event(
         &mut self,
-        _: &mut ggez::Context,
+        ctx: &mut ggez::Context,
         input: KeyInput,
         _: bool
     ) -> ggez::GameResult {
@@ -240,7 +246,7 @@ impl EventHandler for Game {
                         }
                         GameState::GameOver => {
                             self.state = GameState::Menu;
-                            self.reset();
+                            self.reset(ctx);
                         }
                         GameState::Play => {
                             // Kugel erstellen

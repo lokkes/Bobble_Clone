@@ -1,20 +1,42 @@
 use crate::grid::{ GRID_WIDTH, GRID_HEIGHT, BLOCK_SIZE };
 use crate::utils::check_collision;
 use ggez::graphics::DrawParam;
-use ggez::graphics::DrawMode;
-use ggez::graphics::Mesh;
+/* use ggez::graphics::DrawMode;
+use ggez::graphics::Mesh; */
 use crate::game::Game;
+
+
+
 
 pub struct Enemy {
     pub pos: (f32, f32),
     pub velocity: (f32, f32),
+    pub left_image: ggez::graphics::Image,
+    pub right_image: ggez::graphics::Image,
 }
 
-pub fn create_enemies() -> Vec<Enemy> {
+
+
+pub fn create_enemies(ctx: &mut ggez::Context) -> Vec<Enemy> {
     vec![
-        Enemy { pos: (100.0, 100.0), velocity: (0.5, 0.0) },
-        Enemy { pos: (300.0, 200.0), velocity: (0.0, 1.0) },
-        Enemy { pos: (500.0, 200.0), velocity: (-1.0, -1.0) }
+        Enemy {
+            pos: (100.0, 300.0),
+            velocity: (0.5, 3.5),
+            left_image: ggez::graphics::Image::from_path(ctx, "/robot000.png").unwrap(),
+            right_image: ggez::graphics::Image::from_path(ctx, "/robot010.png").unwrap(),
+        },
+         Enemy {
+            pos: (300.0, 100.0),
+           velocity: (1.5, 0.0),
+            left_image: ggez::graphics::Image::from_path(ctx, "/robot100.png").unwrap(),
+            right_image: ggez::graphics::Image::from_path(ctx, "/robot110.png").unwrap(),
+        },
+        Enemy {
+            pos: (500.0, 100.0),
+            velocity: (0.5, 0.0),
+            left_image: ggez::graphics::Image::from_path(ctx, "/robot000.png").unwrap(),
+            right_image: ggez::graphics::Image::from_path(ctx, "/robot010.png").unwrap(),
+        } 
     ]
 }
 
@@ -49,25 +71,22 @@ impl Enemy {
     pub fn draw(
         canvas: &mut ggez::graphics::Canvas,
         game: &mut Game,
-        ctx: &mut ggez::Context
+        _ctx: &mut ggez::Context,
     ) -> Result<(), Box<dyn std::error::Error>> {
         for enemy in &game.enemies {
-            let enemy_mesh = Mesh::new_circle(
-                ctx,
-                DrawMode::fill(),
-                ggez::mint::Point2 { x: 0.0, y: 0.0 },
-                15.0,
-                0.1,
-                ggez::graphics::Color::from_rgb(255, 0, 0)
-            )?;
+            let image = if enemy.velocity.0 < 0.0 {
+                &enemy.left_image
+            } else {
+                &enemy.right_image
+            };
             canvas.draw(
-                &enemy_mesh,
+                image,
                 DrawParam::default().dest(ggez::mint::Point2 {
                     x: enemy.pos.0,
                     y: enemy.pos.1,
-                })
+                }),
             );
         }
         Ok(())
     }
-}
+}    
