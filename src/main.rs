@@ -1,5 +1,5 @@
-use ggez::{ ContextBuilder, GameResult};
-use ggez::event::{self};
+use ggez::{ ContextBuilder, GameResult };
+use ggez::event::{ self };
 use ggez::conf::WindowMode;
 
 mod game;

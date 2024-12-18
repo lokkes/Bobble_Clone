@@ -1,4 +1,4 @@
-use crate::grid::{GRID_WIDTH, GRID_HEIGHT, BLOCK_SIZE};
+use crate::grid::{ GRID_WIDTH, GRID_HEIGHT };
 
 pub struct Bullet {
     pub pos: (f32, f32),
@@ -11,7 +11,10 @@ impl Bullet {
         self.pos.1 += self.velocity.1;
     }
 
-    pub fn is_off_screen(&self) -> bool {
-        self.pos.0 < 0.0 || self.pos.0 > GRID_WIDTH as f32 * BLOCK_SIZE || self.pos.1 < 0.0 || self.pos.1 > GRID_HEIGHT as f32 * BLOCK_SIZE
+    pub fn is_off_screen(&self, block_size: f32) -> bool {
+        self.pos.0 < 0.0 ||
+            self.pos.0 > (GRID_WIDTH as f32) * block_size ||
+            self.pos.1 < 0.0 ||
+            self.pos.1 > (GRID_HEIGHT as f32) * block_size
     }
 }

@@ -3,7 +3,7 @@ use crate::game::Game;
 
 pub const GRID_WIDTH: usize = 32;
 pub const GRID_HEIGHT: usize = 18;
-pub const BLOCK_SIZE: f32 = 25.0;
+// pub const BLOCK_SIZE: f32 = 25.0;
 
 #[derive(Clone)]
 pub struct GridConfig {
@@ -40,10 +40,15 @@ pub fn draw(
             if game.grid[y][x] {
                 canvas.draw(
                     &game.grid_image,
-                    DrawParam::default().dest(ggez::mint::Point2 {
-                        x: (x as f32) * BLOCK_SIZE,
-                        y: (y as f32) * BLOCK_SIZE,
-                    })
+                    DrawParam::default()
+                        .dest(ggez::mint::Point2 {
+                            x: (x as f32) * game.block_size,
+                            y: (y as f32) * game.block_size,
+                        })
+                        .scale(ggez::mint::Vector2 {
+                            x: game.block_size / (GRID_WIDTH as f32) + game.block_size / 114.285, // + 0.21875 = (1-block_size/grid-width)
+                            y: game.block_size / (GRID_WIDTH as f32) + game.block_size / 114.285,
+                        })
                 );
             }
         }

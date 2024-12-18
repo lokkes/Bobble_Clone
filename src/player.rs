@@ -1,6 +1,6 @@
-use crate::grid::{ GRID_WIDTH, GRID_HEIGHT, BLOCK_SIZE };
+use crate::grid::{ GRID_WIDTH, GRID_HEIGHT };
 use ggez::graphics::DrawParam;
-use crate::utils::check_collision_player;
+use crate::utils::{ check_collision_player, get_y_pos_correction };
 use crate::game::Game;
 
 #[derive(PartialEq)]
@@ -10,7 +10,6 @@ pub enum PlayerState {
     WalkingLeft,
     Jumping,
 }
-
 pub struct Player {
     pub pos: (f32, f32),
     pub velocity: (f32, f32),
@@ -27,7 +26,7 @@ impl Player {
     }
 
     pub fn update_position(game: &mut Game, ctx: &mut ggez::Context) {
-        game.player.velocity.1 += 0.5; // Gravitation
+        game.player.velocity.1 += game.block_size / 50.0; // Gravitation
 
         if game.player.velocity.0 > 0.0 {
             game.player.view_right = true;
@@ -39,8 +38,13 @@ impl Player {
         let next_x = game.player.pos.0 + game.player.velocity.0;
         if
             next_x <= 0.0 ||
-            next_x >= (GRID_WIDTH as f32) * BLOCK_SIZE - BLOCK_SIZE ||
-            check_collision_player(&game.grid, next_x, game.player.pos.1 + 15.0)
+            next_x >= (GRID_WIDTH as f32) * game.block_size - game.block_size ||
+            check_collision_player(
+                &game.grid,
+                next_x,
+                game.player.pos.1 + game.block_size * (game.block_size / 114.285),
+                game.block_size
+            )
         {
             game.player.velocity.0 = 0.0;
         } else {
@@ -50,9 +54,14 @@ impl Player {
         // Vertikale Bewegung prüfen
         let next_y = game.player.pos.1 + game.player.velocity.1;
         if
-            next_y > (GRID_HEIGHT as f32) * BLOCK_SIZE ||
-            (check_collision_player(&game.grid, game.player.pos.0, next_y + 15.0) &&
-                game.player.velocity.1 >= 0.0)||next_y < BLOCK_SIZE
+            next_y > (GRID_HEIGHT as f32) * game.block_size ||
+            (check_collision_player(
+                &game.grid,
+                game.player.pos.0,
+                next_y + game.block_size * (game.block_size / 114.285),
+                game.block_size
+            ) && game.player.velocity.1 >= 0.0) ||
+            next_y < game.block_size
         {
             game.player.velocity.1 = 0.0; // Gravitation stoppen
         } else {
@@ -88,10 +97,16 @@ impl Player {
 
         canvas.draw(
             player_image,
-            DrawParam::default().dest(ggez::mint::Point2 {
-                x: game.player.pos.0 - 30.0,
-                y: game.player.pos.1 - 50.0,
-            })
+            DrawParam::default()
+                .dest(ggez::mint::Point2 {
+                    x: game.player.pos.0 - game.block_size,
+                    y: game.player.pos.1 -
+                    get_y_pos_correction(game.window_width, game.block_size, player_image),
+                })
+                .scale(ggez::mint::Vector2 {
+                    x: game.block_size / (GRID_WIDTH as f32) + game.block_size / 114.285,
+                    y: game.block_size / (GRID_WIDTH as f32) + game.block_size / 114.285,
+                })
         );
     }
 }

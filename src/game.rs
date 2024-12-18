@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use ggez::event::EventHandler;
 use ggez::graphics::{ DrawMode, Mesh, DrawParam };
 use crate::grid::{ GridConfig, GRID_HEIGHT, GRID_WIDTH };
@@ -29,6 +31,13 @@ pub struct Game {
     pub frame_timer: f32,
     pub grid_image: graphics::Image,
     pub press_space_image: graphics::Image,
+    pub window_width: f32,
+    pub window_height: f32,
+    pub selected_option: usize, // Aktuelle Menüoption (Index)
+    pub menu_options: Vec<&'static str>, // Menüoptionen
+    pub selected_size: usize, // Ausgewählte Fenstergröße
+    pub window_sizes: Vec<(f32, f32)>,
+    pub block_size: f32,
 }
 
 impl Game {
@@ -41,21 +50,20 @@ impl Game {
                 (GRID_WIDTH - 1, 0, GRID_HEIGHT)
             ],
             horizontal_lines: vec![
-                (0, 1, 8), // Top line
+                (0, 1, 8), 
                 (0, 12, 20),
                 (0, 24, 32),
-                (9, 5, 27), // Middle line
-                (17, 1, 8), // Bottom lines
+                (5, 5, 10), 
+                (5, 22, 27), 
+                (9, 5, 27), 
+                (13, 1, 11),
+                (13, 21, 32),
+                (17, 1, 8), 
                 (17, 12, 20),
                 (17, 24, 32),
-                (13, 1, 11), // Bottom middle blocks
-                (13, 21, 32),
-                (5, 5, 10), // Floating block above middle platform
-                (5, 22, 27) // Another floating block
             ],
         };
 
-        let enemies = enemy::create_enemies(ctx);
         let grid = grid::create_grid(&level1_config);
         let player_images = vec![
             graphics::Image::from_path(ctx, "/still.png").unwrap(),
@@ -71,8 +79,9 @@ impl Game {
         ];
         let grid_image = graphics::Image::from_path(ctx, "/block0.png").unwrap();
         let press_space_image = graphics::Image::from_path(ctx, "/space1.png").unwrap();
-
-
+        let (width, height) = ctx.gfx.drawable_size();
+        let block_size = width / (GRID_WIDTH as f32);
+        let enemies = enemy::create_enemies(ctx, width, height, block_size);
         Game {
             state: GameState::Menu,
             score: 0,
@@ -87,13 +96,34 @@ impl Game {
             current_frame: 0,
             frame_timer: 0.0,
             press_space_image,
+            window_width: width,
+            window_height: height,
+            selected_option: 0,
+            menu_options: vec!["Start Game", "Set Window Size", "Exit"],
+            selected_size: 0,
+            window_sizes: vec![(800.0, 480.0), (1024.0, 768.0), (1280.0, 720.0), (1920.0, 1080.0)],
+            block_size,
         }
     }
 
     pub fn reset(&mut self, ctx: &mut ggez::Context) {
         self.score = 0;
-        self.player = player::Player::new(400.0, 240.0);
-        self.enemies = enemy::create_enemies(ctx);
+        self.player = player::Player::new(self.window_width / 2.0, self.window_width / 2.0);
+        self.enemies = enemy::create_enemies(
+            ctx,
+            self.window_width,
+            self.window_height,
+            self.block_size
+        );
+        self.bullets = vec![];
+    }
+
+    fn set_window_size(&mut self, ctx: &mut ggez::Context) {
+        let (width, height) = self.window_sizes[self.selected_size];
+        self.window_width = width;
+        self.window_height = height;
+        self.block_size = width / (GRID_WIDTH as f32);
+        ctx.gfx.set_drawable_size(width, height).unwrap();
     }
 }
 
@@ -114,7 +144,9 @@ impl EventHandler for Game {
                         pos: (100.0 + (self.enemies.len() as f32) * 50.0, 100.0),
                         velocity: (1.0, 0.0),
                         left_image: ggez::graphics::Image::from_path(ctx, "/robot000.png").unwrap(),
-                        right_image: ggez::graphics::Image::from_path(ctx, "/robot010.png").unwrap(),
+                        right_image: ggez::graphics::Image
+                            ::from_path(ctx, "/robot010.png")
+                            .unwrap(),
                     });
 
                     // Timer zurücksetzen
@@ -123,23 +155,23 @@ impl EventHandler for Game {
 
                 // Aktualisiere bestehende Gegner
                 for enemy in &mut self.enemies {
-                    enemy.update(&self.grid);
+                    enemy.update(&self.grid, self.block_size);
                 }
 
                 player::Player::update_position(self, ctx);
                 // self.player.update_position();
-                self.enemies.iter_mut().for_each(|enemy| enemy.update(&self.grid));
+                self.enemies.iter_mut().for_each(|enemy| enemy.update(&self.grid, self.block_size));
 
-                if self.player.pos.1 > 460.0 {
-                    self.player.pos.1 = 460.0;
+                if self.player.pos.1 > self.window_height {
+                    self.player.pos.1 = self.window_height;
                     self.player.velocity.1 = 0.0;
                 }
 
                 // Collision with enemies
                 for enemy in &mut self.enemies {
                     if
-                        (self.player.pos.0 - enemy.pos.0).abs() < 20.0 &&
-                        (self.player.pos.1 - enemy.pos.1).abs() < 20.0
+                        (self.player.pos.0 - enemy.pos.0).abs() < self.block_size &&
+                        (self.player.pos.1 - enemy.pos.1).abs() < self.block_size
                     {
                         self.state = GameState::GameOver;
                     }
@@ -150,14 +182,14 @@ impl EventHandler for Game {
                 }
 
                 // Entferne Kugeln, die aus dem Bildschirm verschwinden
-                self.bullets.retain(|bullet| !bullet.is_off_screen());
+                self.bullets.retain(|bullet| !bullet.is_off_screen(self.block_size));
 
                 self.bullets.retain(|bullet| {
                     let mut hit_enemy = false;
                     self.enemies.retain(|enemy| {
                         let collision =
-                            (bullet.pos.0 - enemy.pos.0).abs() < 15.0 &&
-                            (bullet.pos.1 - enemy.pos.1).abs() < 15.0;
+                            (bullet.pos.0 - enemy.pos.0).abs() < self.block_size &&
+                            (bullet.pos.1 - enemy.pos.1).abs() < self.block_size * 2.0;
                         if collision {
                             self.score += 10;
                             hit_enemy = true;
@@ -181,11 +213,40 @@ impl EventHandler for Game {
 
         match self.state {
             GameState::Menu => {
-              
                 canvas.draw(
                     &self.press_space_image,
-                    DrawParam::default().dest(ggez::mint::Point2 { x: 150.0, y: 150.0 }) // Adjust position if needed
-                ); 
+                    DrawParam::default().dest(ggez::mint::Point2 { x: 150.0, y: 150.0 })
+                );
+                for (i, option) in self.menu_options.iter().enumerate() {
+                    let color = if i == self.selected_option {
+                        graphics::Color::WHITE
+                    } else {
+                        graphics::Color::BLUE
+                    };
+                    let text = graphics::Text::new((*option).to_string());
+                    canvas.draw(
+                        &text,
+                        DrawParam::default()
+                            .dest(ggez::mint::Point2 { x: 100.0, y: 100.0 + (i as f32) * 50.0 })
+                            .color(color)
+                    );
+                }
+
+                // Wenn Fenstergröße ändern ausgewählt ist, zeige die aktuelle Größe an
+                if self.selected_option == 1 {
+                    let (width, height) = self.window_sizes[self.selected_size];
+                    let text = graphics::Text::new(
+                        format!(
+                            "Window Size: {}x{} (Use Left/Right to change)",
+                            width as u32,
+                            height as u32
+                        )
+                    );
+                    canvas.draw(
+                        &text,
+                        DrawParam::default().dest(ggez::mint::Point2 { x: 100.0, y: 300.0 })
+                    );
+                }
             }
             GameState::Play => {
                 let _ = grid::draw(&mut canvas, self);
@@ -211,10 +272,17 @@ impl EventHandler for Game {
                     )?;
                     canvas.draw(
                         &bullet_mesh,
-                        DrawParam::default().dest(ggez::mint::Point2 {
-                            x: bullet.pos.0,
-                            y: bullet.pos.1,
-                        })
+                        DrawParam::default()
+                            .dest(ggez::mint::Point2 {
+                                x: bullet.pos.0,
+                                y: bullet.pos.1,
+                            })
+                            .scale(ggez::mint::Vector2 {
+                                x: self.block_size / (GRID_WIDTH as f32) +
+                                self.block_size / 114.285,
+                                y: self.block_size / (GRID_WIDTH as f32) +
+                                self.block_size / 114.285,
+                            })
                     );
                 }
             }
@@ -237,48 +305,99 @@ impl EventHandler for Game {
         input: KeyInput,
         _: bool
     ) -> ggez::GameResult {
-        if let Some(keycode) = input.keycode {
-            match keycode {
-                KeyCode::Space =>
-                    match self.state {
-                        GameState::Menu => {
+        match self.state {
+            GameState::Menu => {
+                if let Some(keycode) = input.keycode {
+                    match keycode {
+                        KeyCode::Space => {
+                            self.reset(ctx);
                             self.state = GameState::Play;
                         }
-                        GameState::GameOver => {
+                        KeyCode::Up => {
+                            if self.selected_option > 0 {
+                                self.selected_option -= 1;
+                            }
+                        }
+                        KeyCode::Down => {
+                            if self.selected_option < self.menu_options.len() - 1 {
+                                self.selected_option += 1;
+                            }
+                        }
+                        KeyCode::Left => {
+                            if self.selected_option == 1 && self.selected_size > 0 {
+                                self.selected_size -= 1;
+                            }
+                        }
+                        KeyCode::Right => {
+                            if
+                                self.selected_option == 1 &&
+                                self.selected_size < self.window_sizes.len() - 1
+                            {
+                                self.selected_size += 1;
+                            }
+                        }
+                        KeyCode::Return => {
+                            match self.selected_option {
+                                0 => {
+                                    self.state = GameState::Play;
+                                }
+                                1 => {
+                                    self.set_window_size(ctx);
+                                }
+                                2 => exit(0),
+                                _ => {}
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            GameState::GameOver => {
+                if let Some(keycode) = input.keycode {
+                    match keycode {
+                        KeyCode::Space => {
                             self.state = GameState::Menu;
                             self.reset(ctx);
                         }
-                        GameState::Play => {
+                        _ => {}
+                    }
+                }
+            }
+            GameState::Play => {
+                if let Some(keycode) = input.keycode {
+                    match keycode {
+                        KeyCode::Space => {
                             // Kugel erstellen
                             let velocity = if self.player.view_right {
-                                (1.0, 0.0)
+                                (self.block_size / 3.0 , 0.0)
                             } else {
-                                (-1.0, 0.0)
+                                (-self.block_size / 3.0, 0.0)
                             };
                             self.bullets.push(bullet::Bullet {
-                                pos: (self.player.pos.0, self.player.pos.1 - 10.0),
+                                pos: (self.player.pos.0, self.player.pos.1 - self.block_size * 1.1),
                                 velocity,
                             });
                         }
-                    }
-                KeyCode::Left => {
-                    if self.state == GameState::Play {
-                        self.player.velocity.0 = -5.0;
-                    }
-                }
-                KeyCode::Right => {
-                    if self.state == GameState::Play {
-                        self.player.velocity.0 = 5.0;
-                    }
-                }
-                KeyCode::Up => {
-                    if self.state == GameState::Play {
-                        if self.player.velocity.1 == 0.0 {
-                            self.player.velocity.1 = -11.0;
+                        KeyCode::Left => {
+                            if self.state == GameState::Play {
+                                self.player.velocity.0 = -self.block_size / 5.0;
+                            }
                         }
+                        KeyCode::Right => {
+                            if self.state == GameState::Play {
+                                self.player.velocity.0 = self.block_size / 5.0;
+                            }
+                        }
+                        KeyCode::Up => {
+                            if self.state == GameState::Play {
+                                if self.player.velocity.1 == 0.0 {
+                                    self.player.velocity.1 = -self.block_size / 2.4;
+                                }
+                            }
+                        }
+                        _ => {}
                     }
                 }
-                _ => {}
             }
         }
         Ok(())
