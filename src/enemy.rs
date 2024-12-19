@@ -40,7 +40,7 @@ pub fn create_enemies(
 
 impl Enemy {
     pub fn update(&mut self, grid: &[[bool; GRID_WIDTH]; GRID_HEIGHT], block_size: f32) {
-        self.velocity.1 += 0.5; // Gravitation
+        self.velocity.1 += block_size / 50.0; // Gravitation
 
         // Horizontale Bewegung prüfen
         let next_x = self.pos.0 + self.velocity.0;

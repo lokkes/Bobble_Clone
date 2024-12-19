@@ -1,4 +1,4 @@
-use crate::grid::{ GRID_WIDTH, GRID_HEIGHT };
+use crate::grid::GRID_WIDTH;
 use ggez::graphics::DrawParam;
 use crate::utils::{ check_collision_player, get_y_pos_correction };
 use crate::game::Game;
@@ -36,9 +36,10 @@ impl Player {
         }
         // Horizontale Bewegung prüfen
         let next_x = game.player.pos.0 + game.player.velocity.0;
+        let next_y = game.player.pos.1 + game.player.velocity.1;
         if
             next_x <= 0.0 ||
-            next_x >= (GRID_WIDTH as f32) * game.block_size - game.block_size ||
+            next_x >= game.window_width ||
             check_collision_player(
                 &game.grid,
                 next_x,
@@ -48,11 +49,14 @@ impl Player {
         {
             game.player.velocity.0 = 0.0;
         } else {
-            game.player.pos.0 = next_x;
+            if next_y > game.window_height - game.block_size {
+                game.player.pos.0 = game.player.pos.0 - game.player.velocity.0 * 0.2;
+            } else {
+                game.player.pos.0 = next_x;
+            }
         }
 
         // Vertikale Bewegung prüfen
-        let next_y = game.player.pos.1 + game.player.velocity.1;
         if
             (check_collision_player(
                 &game.grid,
@@ -66,7 +70,7 @@ impl Player {
         } else {
             game.player.pos.1 = next_y;
         }
-        if next_y > (GRID_HEIGHT as f32) * game.block_size + game.block_size {
+        if next_y > game.window_height {
             game.player.pos.1 = 0.0;
         }
 
@@ -91,19 +95,21 @@ impl Player {
 
     pub fn draw(canvas: &mut ggez::graphics::Canvas, game: &mut Game) {
         let player_image = match game.player_state {
-            PlayerState::Idle => &game.player_images[0],
-            PlayerState::WalkingLeft => &game.player_images[1 + game.current_frame],
-            PlayerState::WalkingRight => &game.player_images[5 + game.current_frame],
-            PlayerState::Jumping => &game.player_images[9],
+            PlayerState::Idle => game.resources.player_images[0].clone(),
+            PlayerState::WalkingLeft =>
+                game.resources.player_images[1 + game.current_frame].clone(),
+            PlayerState::WalkingRight =>
+                game.resources.player_images[5 + game.current_frame].clone(),
+            PlayerState::Jumping => game.resources.player_images[9].clone(),
         };
 
         canvas.draw(
-            player_image,
+            &player_image,
             DrawParam::default()
                 .dest(ggez::mint::Point2 {
                     x: game.player.pos.0 - game.block_size,
                     y: game.player.pos.1 -
-                    get_y_pos_correction(game.window_width, game.block_size, player_image),
+                    get_y_pos_correction(game.window_width, game.block_size, &player_image),
                 })
                 .scale(ggez::mint::Vector2 {
                     x: game.block_size / (GRID_WIDTH as f32) + game.block_size / 114.285,

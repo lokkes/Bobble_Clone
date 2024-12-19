@@ -39,7 +39,7 @@ pub fn draw(
         for x in 0..GRID_WIDTH {
             if game.grid[y][x] {
                 canvas.draw(
-                    &game.grid_image,
+                    &game.resources.grid_image,
                     DrawParam::default()
                         .dest(ggez::mint::Point2 {
                             x: (x as f32) * game.block_size,

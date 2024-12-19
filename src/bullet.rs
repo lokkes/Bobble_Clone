@@ -1,5 +1,5 @@
-use crate::grid::{ GRID_WIDTH, GRID_HEIGHT };
-use ggez::graphics;
+use crate::{ game::Game, grid::{ GRID_HEIGHT, GRID_WIDTH } };
+use ggez::graphics::{ self, DrawParam };
 
 pub struct Bullet {
     pub pos: (f32, f32),
@@ -20,4 +20,22 @@ impl Bullet {
             self.pos.1 > (GRID_HEIGHT as f32) * block_size
     }
 
+    pub fn draw(canvas: &mut ggez::graphics::Canvas, game: &mut Game) {
+        for bullet in game.bullets.iter() {
+            canvas.draw(
+                &bullet.image,
+                DrawParam::default()
+                    .dest(ggez::mint::Point2 {
+                        x: bullet.pos.0,
+                        y: bullet.pos.1,
+                    })
+                    .scale(ggez::mint::Vector2 {
+                        x: (game.block_size / (GRID_WIDTH as f32) + game.block_size / 114.285) *
+                        0.5,
+                        y: (game.block_size / (GRID_WIDTH as f32) + game.block_size / 114.285) *
+                        0.5,
+                    }) // Adjust scaling as needed
+            );
+        }
+    }
 }

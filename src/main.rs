@@ -8,6 +8,7 @@ mod enemy;
 mod grid;
 mod utils;
 mod bullet;
+mod resources;
 
 fn main() -> GameResult {
     let (mut ctx, event_loop) = ContextBuilder::new("bobble_clone", "author_name")
