@@ -19,4 +19,5 @@ impl Bullet {
             self.pos.1 < 0.0 ||
             self.pos.1 > (GRID_HEIGHT as f32) * block_size
     }
+
 }
