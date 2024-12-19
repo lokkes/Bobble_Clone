@@ -19,19 +19,19 @@ pub fn create_enemies(
     vec![
         Enemy {
             pos: (window_width / 8.0, window_height / 2.0),
-            velocity: (block_size / 25.0, block_size / 7.0),
+            velocity: (block_size / 15.0, block_size / 7.0),
             left_image: ggez::graphics::Image::from_path(ctx, "/robot000.png").unwrap(),
             right_image: ggez::graphics::Image::from_path(ctx, "/robot010.png").unwrap(),
         },
         Enemy {
             pos: (window_width / 4.0, 00.0),
-            velocity: (block_size / 16.0, 0.0),
+            velocity: (block_size / 8.0, 0.0),
             left_image: ggez::graphics::Image::from_path(ctx, "/robot100.png").unwrap(),
             right_image: ggez::graphics::Image::from_path(ctx, "/robot110.png").unwrap(),
         },
         Enemy {
             pos: (window_width / 4.0, 00.0),
-            velocity: (-block_size / 25.0, 0.0),
+            velocity: (-block_size / 15.0, 0.0),
             left_image: ggez::graphics::Image::from_path(ctx, "/robot000.png").unwrap(),
             right_image: ggez::graphics::Image::from_path(ctx, "/robot010.png").unwrap(),
         }
@@ -62,7 +62,6 @@ impl Enemy {
         // Vertikale Bewegung prüfen
         let next_y = self.pos.1 + self.velocity.1;
         if
-            next_y > (GRID_HEIGHT as f32) * block_size ||
             check_collision(
                 grid,
                 self.pos.0,
@@ -98,5 +97,12 @@ impl Enemy {
             );
         }
         Ok(())
+    }
+
+    pub fn is_off_screen(&self, block_size: f32) -> bool {
+        self.pos.0 < 0.0 ||
+            self.pos.0 > (GRID_WIDTH as f32) * block_size + 2.0 * block_size ||
+            self.pos.1 < 0.0 ||
+            self.pos.1 > (GRID_HEIGHT as f32) * block_size + 2.0 * block_size
     }
 }

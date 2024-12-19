@@ -54,18 +54,20 @@ impl Player {
         // Vertikale Bewegung prüfen
         let next_y = game.player.pos.1 + game.player.velocity.1;
         if
-            next_y > (GRID_HEIGHT as f32) * game.block_size ||
             (check_collision_player(
                 &game.grid,
                 game.player.pos.0,
                 next_y + game.block_size * (game.block_size / 114.285),
                 game.block_size
             ) && game.player.velocity.1 >= 0.0) ||
-            next_y < game.block_size
+            (next_y < game.block_size && game.player.velocity.1 < 0.0)
         {
             game.player.velocity.1 = 0.0; // Gravitation stoppen
         } else {
             game.player.pos.1 = next_y;
+        }
+        if next_y > (GRID_HEIGHT as f32) * game.block_size + game.block_size {
+            game.player.pos.1 = 0.0;
         }
 
         game.player_state = match (game.player.velocity.1 < 0.0, game.player.velocity.0) {

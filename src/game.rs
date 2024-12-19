@@ -167,9 +167,8 @@ impl EventHandler for Game {
                     enemy.update(&self.grid, self.block_size);
                 }
 
+                self.enemies.retain(|enemy| !enemy.is_off_screen(self.block_size));
                 player::Player::update_position(self, ctx);
-                // self.player.update_position();
-                self.enemies.iter_mut().for_each(|enemy| enemy.update(&self.grid, self.block_size));
 
                 if self.player.pos.1 > self.window_height {
                     self.player.pos.1 = self.window_height;
