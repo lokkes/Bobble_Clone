@@ -1,7 +1,7 @@
 use std::process::exit;
 
 use ggez::event::EventHandler;
-use ggez::graphics::{ DrawMode, Mesh, DrawParam };
+use ggez::graphics::{DrawParam};
 use crate::grid::{ GridConfig, GRID_HEIGHT, GRID_WIDTH };
 use ggez::input::keyboard::{ KeyCode, KeyInput };
 use crate::player;
@@ -38,6 +38,9 @@ pub struct Game {
     pub selected_size: usize, // Ausgewählte Fenstergröße
     pub window_sizes: Vec<(f32, f32)>,
     pub block_size: f32,
+    pub bullet_left_image: graphics::Image,
+    pub bullet_right_image: graphics::Image,
+
 }
 
 impl Game {
@@ -82,6 +85,9 @@ impl Game {
         let (width, height) = ctx.gfx.drawable_size();
         let block_size = width / (GRID_WIDTH as f32);
         let enemies = enemy::create_enemies(ctx, width, height, block_size);
+        let bullet_left_image = graphics::Image::from_path(ctx, "/bolt01.png").unwrap();
+        let bullet_right_image = graphics::Image::from_path(ctx, "/bolt10.png").unwrap();
+
         Game {
             state: GameState::Menu,
             score: 0,
@@ -103,6 +109,9 @@ impl Game {
             selected_size: 0,
             window_sizes: vec![(800.0, 480.0), (1024.0, 768.0), (1280.0, 720.0), (1920.0, 1080.0)],
             block_size,
+            bullet_left_image,
+            bullet_right_image,
+
         }
     }
 
@@ -177,7 +186,7 @@ impl EventHandler for Game {
                     }
                 }
 
-                for bullet in &mut self.bullets {
+                for bullet in &mut self.bullets.iter_mut()  {
                     bullet.update();
                 }
 
@@ -261,30 +270,24 @@ impl EventHandler for Game {
                     DrawParam::default().dest(ggez::mint::Point2 { x: 10.0, y: 10.0 })
                 );
 
-                for bullet in &self.bullets {
-                    let bullet_mesh = Mesh::new_circle(
-                        ctx,
-                        DrawMode::fill(),
-                        ggez::mint::Point2 { x: 0.0, y: 0.0 },
-                        5.0,
-                        0.1,
-                        ggez::graphics::Color::from_rgb(255, 255, 0) // Gelbe Kugeln
-                    )?;
+                for bullet in self.bullets.iter()  {
+                    let bullet_image = if bullet.velocity.0 > 0.0 {
+                        &self.bullet_right_image
+                    } else {
+                        &self.bullet_left_image
+                    };
+                
                     canvas.draw(
-                        &bullet_mesh,
+                        bullet_image,
                         DrawParam::default()
                             .dest(ggez::mint::Point2 {
                                 x: bullet.pos.0,
                                 y: bullet.pos.1,
                             })
-                            .scale(ggez::mint::Vector2 {
-                                x: self.block_size / (GRID_WIDTH as f32) +
-                                self.block_size / 114.285,
-                                y: self.block_size / (GRID_WIDTH as f32) +
-                                self.block_size / 114.285,
-                            })
+                            .scale(ggez::mint::Vector2 { x: 0.5, y: 0.5 }) // Adjust scaling as needed
                     );
                 }
+                
             }
             GameState::GameOver => {
                 let over_text = ggez::graphics::Text::new("Game Over! Press SPACE to Restart");
@@ -329,10 +332,7 @@ impl EventHandler for Game {
                             }
                         }
                         KeyCode::Right => {
-                            if
-                                self.selected_option == 1 &&
-                                self.selected_size < self.window_sizes.len() - 1
-                            {
+                            if self.selected_option == 1 && self.selected_size < self.window_sizes.len() - 1 {
                                 self.selected_size += 1;
                             }
                         }
@@ -367,25 +367,37 @@ impl EventHandler for Game {
                 if let Some(keycode) = input.keycode {
                     match keycode {
                         KeyCode::Space => {
-                            // Kugel erstellen
+                            // Bullet velocity based on player facing direction
                             let velocity = if self.player.view_right {
-                                (self.block_size / 3.0 , 0.0)
+                                (self.block_size / 3.0, 0.0) // Bullet moves right
                             } else {
-                                (-self.block_size / 3.0, 0.0)
+                                (-self.block_size / 3.0, 0.0) // Bullet moves left
                             };
+    
+                            // Bullet image based on player facing direction
+                            let bullet_image = if self.player.view_right {
+                                self.bullet_right_image.clone()
+                            } else {
+                                self.bullet_left_image.clone()
+                            };
+    
+                           
                             self.bullets.push(bullet::Bullet {
                                 pos: (self.player.pos.0, self.player.pos.1 - self.block_size * 1.1),
-                                velocity,
+                                velocity,  // Use the calculated velocity here
+                                image: bullet_image,  
                             });
                         }
                         KeyCode::Left => {
                             if self.state == GameState::Play {
                                 self.player.velocity.0 = -self.block_size / 5.0;
+                                self.player.view_right = false;  // Player faces left
                             }
                         }
                         KeyCode::Right => {
                             if self.state == GameState::Play {
                                 self.player.velocity.0 = self.block_size / 5.0;
+                                self.player.view_right = true;  // Player faces right
                             }
                         }
                         KeyCode::Up => {
@@ -402,6 +414,7 @@ impl EventHandler for Game {
         }
         Ok(())
     }
+    
     fn key_up_event(&mut self, _: &mut ggez::Context, input: KeyInput) -> ggez::GameResult {
         if let Some(keycode) = input.keycode {
             if self.state == GameState::Play {

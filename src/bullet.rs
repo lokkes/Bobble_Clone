@@ -1,8 +1,10 @@
 use crate::grid::{ GRID_WIDTH, GRID_HEIGHT };
+use ggez::graphics;
 
 pub struct Bullet {
     pub pos: (f32, f32),
     pub velocity: (f32, f32),
+    pub image: graphics::Image,
 }
 
 impl Bullet {
