@@ -91,7 +91,7 @@ impl Game {
             selected_size: 0,
             window_sizes: vec![(800.0, 480.0), (1024.0, 768.0), (1280.0, 720.0), (1920.0, 1080.0)],
             block_size,
-            start_game_image: graphics::Image::from_path(ctx, "/Start.png").unwrap(),
+            start_game_image: graphics::Image::from_path(ctx, "/startgame.png").unwrap(),
             set_window_size_image: graphics::Image::from_path(ctx, "/windowSize.png").unwrap(),
             exit_image: graphics::Image::from_path(ctx, "/Exit.png").unwrap(),
         }
