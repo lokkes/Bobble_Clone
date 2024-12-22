@@ -39,6 +39,9 @@ pub struct Game {
     pub selected_size: usize, // Ausgewählte Fenstergröße
     pub window_sizes: Vec<(f32, f32)>,
     pub block_size: f32,
+    pub start_game_image: graphics::Image,
+    pub set_window_size_image: graphics::Image,
+    pub exit_image: graphics::Image,
 }
 
 impl Game {
@@ -91,6 +94,9 @@ impl Game {
             selected_size: 0,
             window_sizes: vec![(800.0, 480.0), (1024.0, 768.0), (1280.0, 720.0), (1920.0, 1080.0)],
             block_size,
+            start_game_image: graphics::Image::from_path(ctx, "/startgame.png").unwrap(),
+            set_window_size_image: graphics::Image::from_path(ctx, "/windowSize.png").unwrap(),
+            exit_image: graphics::Image::from_path(ctx, "/Exit.png").unwrap(),
         }
     }
 
@@ -201,41 +207,40 @@ impl EventHandler for Game {
 
     fn draw(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         let mut canvas = ggez::graphics::Canvas::from_frame(ctx, ggez::graphics::Color::BLACK);
-
+    
         match self.state {
             GameState::Menu => {
-                canvas.draw(
-                    &self.resources.press_space_image,
-                    DrawParam::default().dest(ggez::mint::Point2 { x: 150.0, y: 150.0 })
-                );
-                for (i, option) in self.menu_options.iter().enumerate() {
+                let menu_images = vec![
+                    self.start_game_image.clone(),
+                    self.set_window_size_image.clone(),
+                    self.exit_image.clone(),
+                ];
+    
+                for (i, image) in menu_images.into_iter().enumerate() {
+                    let x = self.window_width / 2.0 - image.width() as f32 / 2.0;
+                    let y = 150.0 + (i as f32) * 100.0;
                     let color = if i == self.selected_option {
-                        graphics::Color::WHITE
+                        graphics::Color::WHITE // Highlighted option
                     } else {
-                        graphics::Color::BLUE
+                        graphics::Color::new(0.5, 0.5, 0.5, 1.0) // Gray for non-highlighted option
                     };
-                    let text = graphics::Text::new((*option).to_string());
+    
                     canvas.draw(
-                        &text,
+                        &image,
                         DrawParam::default()
-                            .dest(ggez::mint::Point2 { x: 100.0, y: 100.0 + (i as f32) * 50.0 })
-                            .color(color)
+                            .dest(ggez::mint::Point2 { x, y })
+                            .color(color),
                     );
                 }
-
-                // Wenn Fenstergröße ändern ausgewählt ist, zeige die aktuelle Größe an
+    
                 if self.selected_option == 1 {
                     let (width, height) = self.window_sizes[self.selected_size];
                     let text = graphics::Text::new(
-                        format!(
-                            "Window Size: {}x{} (Use Left/Right to change)",
-                            width as u32,
-                            height as u32
-                        )
+                        format!("Window Size: {}x{} (Use Left/Right to change)", width as u32, height as u32),
                     );
                     canvas.draw(
                         &text,
-                        DrawParam::default().dest(ggez::mint::Point2 { x: 100.0, y: 300.0 })
+                        DrawParam::default().dest(ggez::mint::Point2 { x: 100.0, y: 300.0 }),
                     );
                 }
             }
@@ -249,21 +254,23 @@ impl EventHandler for Game {
                 let score_text = ggez::graphics::Text::new(format!("Score: {}", self.score));
                 canvas.draw(
                     &score_text,
-                    DrawParam::default().dest(ggez::mint::Point2 { x: 10.0, y: 10.0 })
+                    DrawParam::default().dest(ggez::mint::Point2 { x: 10.0, y: 10.0 }),
                 );
             }
             GameState::GameOver => {
                 let over_text = ggez::graphics::Text::new("Game Over! Press SPACE to Restart");
                 canvas.draw(
                     &over_text,
-                    DrawParam::default().dest(ggez::mint::Point2 { x: 250.0, y: 200.0 })
+                    DrawParam::default().dest(ggez::mint::Point2 { x: 250.0, y: 200.0 }),
                 );
             }
         }
-
+    
         canvas.finish(ctx)?;
         Ok(())
     }
+    
+    
 
     fn key_down_event(
         &mut self,
