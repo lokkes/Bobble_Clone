@@ -35,6 +35,7 @@ pub struct Game {
     pub selected_size: usize, // Ausgewählte Fenstergröße
     pub window_sizes: Vec<(f32, f32)>,
     pub block_size: f32,
+    pub game_over_image: graphics::Image
 }
 
 impl Game {
@@ -66,6 +67,9 @@ impl Game {
         let block_size = width / (GRID_WIDTH as f32);
         let enemies = enemy::create_enemies(width, height, block_size);
         let resources = Resources::load(ctx);
+        let game_over_image = graphics::Image::from_path(ctx, "/gameover.png")
+    .unwrap_or_else(|_| panic!("Game Over image not found in resources!"));
+
 
         Game {
             state: GameState::Menu,
@@ -83,6 +87,7 @@ impl Game {
             selected_size: 0,
             window_sizes: vec![(800.0, 480.0), (1024.0, 768.0), (1280.0, 720.0), (1920.0, 1080.0)],
             block_size,
+            game_over_image,
         }
     }
 
@@ -180,7 +185,7 @@ impl EventHandler for Game {
                 }
             }
             GameState::GameOver => {
-                // Game Over logic
+              
             }
         }
         // Framerate limitieren
@@ -237,12 +242,15 @@ impl EventHandler for Game {
                 );
             }
             GameState::GameOver => {
-                let over_text = ggez::graphics::Text::new("Game Over! Press SPACE to Restart");
                 canvas.draw(
-                    &over_text,
-                    DrawParam::default().dest(ggez::mint::Point2 { x: 250.0, y: 200.0 })
+                    &self.game_over_image,
+                    DrawParam::default().dest(ggez::mint::Point2 { 
+                        x: self.window_width / 2.0 - self.game_over_image.width() as f32 / 2.0,
+                        y: self.window_height / 2.0 - self.game_over_image.height() as f32 / 2.0
+                    }),
                 );
             }
+            
         }
 
         canvas.finish(ctx)?;
