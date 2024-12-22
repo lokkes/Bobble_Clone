@@ -9,6 +9,7 @@ use crate::player;
 use crate::grid;
 use crate::enemy;
 use crate::bullet;
+use crate::bubble;
 use ggez::graphics;
 
 #[derive(PartialEq)]
@@ -24,9 +25,10 @@ pub struct Game {
     pub player: player::Player,
     pub enemies: Vec<enemy::Enemy>,
     pub bullets: Vec<bullet::Bullet>,
+    pub bubbles: Vec<bubble::Bubble>,
     pub grid: [[bool; GRID_WIDTH]; GRID_HEIGHT],
     pub enemy_spawn_timer: f32,
-    pub resources: Resources, // Neue Ressourcensammlung
+    pub resources: Resources,
     pub player_state: player::PlayerState,
     pub current_frame: usize,
     pub frame_timer: f32,
@@ -75,9 +77,10 @@ impl Game {
             player: player::Player::new(400.0, 240.0),
             enemies,
             bullets: vec![],
+            bubbles: vec![],
             grid,
             enemy_spawn_timer: 10.0,
-            resources, // Ressourcen verwenden
+            resources,
             player_state: player::PlayerState::Idle,
             current_frame: 0,
             frame_timer: 0.0,
@@ -101,6 +104,7 @@ impl Game {
             self.block_size
         );
         self.bullets = vec![];
+        self.bubbles = vec![];
     }
 
     fn set_window_size(&mut self, ctx: &mut ggez::Context) {
@@ -156,7 +160,7 @@ impl EventHandler for Game {
                     }
                 }
 
-                for bullet in &mut self.bullets.iter_mut() {
+                for bullet in &mut self.bullets {
                     bullet.update();
                 }
 
@@ -172,11 +176,19 @@ impl EventHandler for Game {
                         if collision {
                             self.score += 10;
                             hit_enemy = true;
+
+                            self.bubbles.push(
+                                bubble::Bubble::new(enemy.pos, (0.0, -self.block_size / 25.0))
+                            );
                         }
                         !collision
                     });
                     !hit_enemy
                 });
+
+                for bubble in &mut self.bubbles {
+                    bubble.update(ctx);
+                }
             }
             GameState::GameOver => {
                 // Game Over logic
@@ -232,6 +244,7 @@ impl EventHandler for Game {
                 let _ = player::Player::draw(&mut canvas, self);
                 let _ = enemy::Enemy::draw(&mut canvas, self, ctx);
                 let _ = bullet::Bullet::draw(&mut canvas, self);
+                let _ = bubble::Bubble::draw(&mut canvas, self);
 
                 let score_text = ggez::graphics::Text::new(format!("Score: {}", self.score));
                 canvas.draw(
@@ -341,22 +354,16 @@ impl EventHandler for Game {
                             });
                         }
                         KeyCode::Left => {
-                            if self.state == GameState::Play {
-                                self.player.velocity.0 = -self.block_size / 5.0;
-                                self.player.view_right = false; // Player faces left
-                            }
+                            self.player.velocity.0 = -self.block_size / 5.0;
+                            self.player.view_right = false;
                         }
                         KeyCode::Right => {
-                            if self.state == GameState::Play {
-                                self.player.velocity.0 = self.block_size / 5.0;
-                                self.player.view_right = true; // Player faces right
-                            }
+                            self.player.velocity.0 = self.block_size / 5.0;
+                            self.player.view_right = true;
                         }
                         KeyCode::Up => {
-                            if self.state == GameState::Play {
-                                if self.player.velocity.1 == 0.0 {
-                                    self.player.velocity.1 = -self.block_size / 2.4;
-                                }
+                            if self.player.velocity.1 == 0.0 {
+                                self.player.velocity.1 = -self.block_size / 2.4;
                             }
                         }
                         _ => {}
@@ -370,7 +377,10 @@ impl EventHandler for Game {
     fn key_up_event(&mut self, _: &mut ggez::Context, input: KeyInput) -> ggez::GameResult {
         if let Some(keycode) = input.keycode {
             if self.state == GameState::Play {
-                if keycode == KeyCode::Left || keycode == KeyCode::Right {
+                if
+                    (keycode == KeyCode::Left && self.player.velocity.0 < 0.0) ||
+                    (keycode == KeyCode::Right && self.player.velocity.0 > 0.0)
+                {
                     self.player.velocity.0 = 0.0;
                 }
             }

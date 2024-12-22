@@ -9,6 +9,7 @@ mod grid;
 mod utils;
 mod bullet;
 mod resources;
+mod bubble;
 
 fn main() -> GameResult {
     let (mut ctx, event_loop) = ContextBuilder::new("bobble_clone", "author_name")

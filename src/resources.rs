@@ -6,6 +6,7 @@ pub struct Resources {
     pub press_space_image: graphics::Image,
     pub bullet_left_image: graphics::Image,
     pub bullet_right_image: graphics::Image,
+    pub bobble_image: Vec<graphics::Image>,
 }
 
 impl Resources {
@@ -25,8 +26,18 @@ impl Resources {
             ],
             grid_image: graphics::Image::from_path(ctx, "/block0.png").unwrap(),
             press_space_image: graphics::Image::from_path(ctx, "/space1.png").unwrap(),
-            bullet_left_image: graphics::Image::from_path(ctx, "/bolt01.png").unwrap(),
+            bullet_left_image: graphics::Image::from_path(ctx, "/orb6.png").unwrap(),
             bullet_right_image: graphics::Image::from_path(ctx, "/bolt10.png").unwrap(),
+            bobble_image: vec![
+                graphics::Image::from_path(ctx, "/trap00.png").unwrap(),
+                graphics::Image::from_path(ctx, "/trap01.png").unwrap(),
+                graphics::Image::from_path(ctx, "/trap02.png").unwrap(),
+                graphics::Image::from_path(ctx, "/trap03.png").unwrap(),
+                graphics::Image::from_path(ctx, "/trap04.png").unwrap(),
+                graphics::Image::from_path(ctx, "/trap05.png").unwrap(),
+                graphics::Image::from_path(ctx, "/trap06.png").unwrap(),
+                graphics::Image::from_path(ctx, "/trap07.png").unwrap()
+            ],
         }
     }
 }
