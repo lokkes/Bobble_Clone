@@ -29,19 +29,12 @@ pub struct Game {
     pub grid: [[bool; GRID_WIDTH]; GRID_HEIGHT],
     pub enemy_spawn_timer: f32,
     pub resources: Resources,
-    pub player_state: player::PlayerState,
-    pub current_frame: usize,
-    pub frame_timer: f32,
     pub window_width: f32,
     pub window_height: f32,
     pub selected_option: usize, // Aktuelle Menüoption (Index)
-    pub menu_options: Vec<&'static str>, // Menüoptionen
     pub selected_size: usize, // Ausgewählte Fenstergröße
     pub window_sizes: Vec<(f32, f32)>,
     pub block_size: f32,
-    pub start_game_image: graphics::Image,
-    pub set_window_size_image: graphics::Image,
-    pub exit_image: graphics::Image,
 }
 
 impl Game {
@@ -71,7 +64,7 @@ impl Game {
         let grid = grid::create_grid(&level1_config);
         let (width, height) = ctx.gfx.drawable_size();
         let block_size = width / (GRID_WIDTH as f32);
-        let enemies = enemy::create_enemies(ctx, width, height, block_size);
+        let enemies = enemy::create_enemies(width, height, block_size);
         let resources = Resources::load(ctx);
 
         Game {
@@ -84,27 +77,19 @@ impl Game {
             grid,
             enemy_spawn_timer: 10.0,
             resources,
-            player_state: player::PlayerState::Idle,
-            current_frame: 0,
-            frame_timer: 0.0,
             window_width: width,
             window_height: height,
             selected_option: 0,
-            menu_options: vec!["Start Game", "Set Window Size", "Exit"],
             selected_size: 0,
             window_sizes: vec![(800.0, 480.0), (1024.0, 768.0), (1280.0, 720.0), (1920.0, 1080.0)],
             block_size,
-            start_game_image: graphics::Image::from_path(ctx, "/startgame.png").unwrap(),
-            set_window_size_image: graphics::Image::from_path(ctx, "/windowSize.png").unwrap(),
-            exit_image: graphics::Image::from_path(ctx, "/Exit.png").unwrap(),
         }
     }
 
-    pub fn reset(&mut self, ctx: &mut ggez::Context) {
+    pub fn reset(&mut self, _ctx: &mut ggez::Context) {
         self.score = 0;
         self.player = player::Player::new(self.window_width / 2.0, self.window_width / 2.0);
         self.enemies = enemy::create_enemies(
-            ctx,
             self.window_width,
             self.window_height,
             self.block_size
@@ -135,14 +120,12 @@ impl EventHandler for Game {
 
                 if self.enemy_spawn_timer <= 0.0 {
                     // Füge einen neuen Gegner hinzu
-                    self.enemies.push(enemy::Enemy {
-                        pos: (100.0 + (self.enemies.len() as f32) * 50.0, 100.0),
-                        velocity: (1.0, 0.0),
-                        left_image: ggez::graphics::Image::from_path(ctx, "/robot000.png").unwrap(),
-                        right_image: ggez::graphics::Image
-                            ::from_path(ctx, "/robot010.png")
-                            .unwrap(),
-                    });
+                    self.enemies.push(
+                        enemy::Enemy::new(
+                            (100.0 + (self.enemies.len() as f32) * 50.0, 100.0),
+                            (1.0, 0.0)
+                        )
+                    );
 
                     // Timer zurücksetzen
                     self.enemy_spawn_timer = 10.0;
@@ -207,40 +190,36 @@ impl EventHandler for Game {
 
     fn draw(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         let mut canvas = ggez::graphics::Canvas::from_frame(ctx, ggez::graphics::Color::BLACK);
-    
+
         match self.state {
             GameState::Menu => {
-                let menu_images = vec![
-                    self.start_game_image.clone(),
-                    self.set_window_size_image.clone(),
-                    self.exit_image.clone(),
-                ];
-    
-                for (i, image) in menu_images.into_iter().enumerate() {
-                    let x = self.window_width / 2.0 - image.width() as f32 / 2.0;
+                for (i, image) in self.resources.menu_images.clone().into_iter().enumerate() {
+                    let x = self.window_width / 2.0 - (image.width() as f32) / 2.0;
                     let y = 150.0 + (i as f32) * 100.0;
                     let color = if i == self.selected_option {
                         graphics::Color::WHITE // Highlighted option
                     } else {
                         graphics::Color::new(0.5, 0.5, 0.5, 1.0) // Gray for non-highlighted option
                     };
-    
+
                     canvas.draw(
                         &image,
-                        DrawParam::default()
-                            .dest(ggez::mint::Point2 { x, y })
-                            .color(color),
+                        DrawParam::default().dest(ggez::mint::Point2 { x, y }).color(color)
                     );
                 }
-    
+
                 if self.selected_option == 1 {
                     let (width, height) = self.window_sizes[self.selected_size];
                     let text = graphics::Text::new(
-                        format!("Window Size: {}x{} (Use Left/Right to change)", width as u32, height as u32),
+                        format!(
+                            "Window Size: {}x{} (Use Left/Right to change)",
+                            width as u32,
+                            height as u32
+                        )
                     );
                     canvas.draw(
                         &text,
-                        DrawParam::default().dest(ggez::mint::Point2 { x: 100.0, y: 300.0 }),
+                        DrawParam::default().dest(ggez::mint::Point2 { x: 100.0, y: 300.0 })
                     );
                 }
             }
@@ -254,23 +233,21 @@ impl EventHandler for Game {
                 let score_text = ggez::graphics::Text::new(format!("Score: {}", self.score));
                 canvas.draw(
                     &score_text,
-                    DrawParam::default().dest(ggez::mint::Point2 { x: 10.0, y: 10.0 }),
+                    DrawParam::default().dest(ggez::mint::Point2 { x: 10.0, y: 10.0 })
                 );
             }
             GameState::GameOver => {
                 let over_text = ggez::graphics::Text::new("Game Over! Press SPACE to Restart");
                 canvas.draw(
                     &over_text,
-                    DrawParam::default().dest(ggez::mint::Point2 { x: 250.0, y: 200.0 }),
+                    DrawParam::default().dest(ggez::mint::Point2 { x: 250.0, y: 200.0 })
                 );
             }
         }
-    
+
         canvas.finish(ctx)?;
         Ok(())
     }
-    
-    
 
     fn key_down_event(
         &mut self,
@@ -292,7 +269,7 @@ impl EventHandler for Game {
                             }
                         }
                         KeyCode::Down => {
-                            if self.selected_option < self.menu_options.len() - 1 {
+                            if self.selected_option < self.resources.menu_images.len() - 1 {
                                 self.selected_option += 1;
                             }
                         }
@@ -347,17 +324,10 @@ impl EventHandler for Game {
                                 (-self.block_size / 3.0, 0.0) // Bullet moves left
                             };
 
-                            // Bullet image based on player facing direction
-                            let bullet_image = if self.player.view_right {
-                                self.resources.bullet_right_image.clone()
-                            } else {
-                                self.resources.bullet_left_image.clone()
-                            };
-
                             self.bullets.push(bullet::Bullet {
                                 pos: (self.player.pos.0, self.player.pos.1 - self.block_size * 1.1),
                                 velocity,
-                                image: bullet_image,
+                                image: self.resources.bullet_image.clone(),
                             });
                         }
                         KeyCode::Left => {

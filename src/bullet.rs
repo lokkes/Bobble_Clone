@@ -27,14 +27,14 @@ impl Bullet {
                 DrawParam::default()
                     .dest(ggez::mint::Point2 {
                         x: bullet.pos.0,
-                        y: bullet.pos.1,
+                        y: bullet.pos.1 - game.block_size / 2.0,
                     })
                     .scale(ggez::mint::Vector2 {
                         x: (game.block_size / (GRID_WIDTH as f32) + game.block_size / 114.285) *
                         0.5,
                         y: (game.block_size / (GRID_WIDTH as f32) + game.block_size / 114.285) *
                         0.5,
-                    }) // Adjust scaling as needed
+                    })
             );
         }
     }

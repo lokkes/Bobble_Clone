@@ -6,39 +6,33 @@ use crate::game::Game;
 pub struct Enemy {
     pub pos: (f32, f32), //(pos_x,pos_y)
     pub velocity: (f32, f32),
-    pub left_image: ggez::graphics::Image,
-    pub right_image: ggez::graphics::Image,
 }
 
-pub fn create_enemies(
-    ctx: &mut ggez::Context,
-    window_width: f32,
-    window_height: f32,
-    block_size: f32
-) -> Vec<Enemy> {
+pub fn create_enemies(window_width: f32, window_height: f32, block_size: f32) -> Vec<Enemy> {
     vec![
         Enemy {
             pos: (window_width / 8.0, window_height / 2.0),
             velocity: (block_size / 15.0, block_size / 7.0),
-            left_image: ggez::graphics::Image::from_path(ctx, "/robot000.png").unwrap(),
-            right_image: ggez::graphics::Image::from_path(ctx, "/robot010.png").unwrap(),
         },
         Enemy {
             pos: (window_width / 4.0, 00.0),
             velocity: (block_size / 8.0, 0.0),
-            left_image: ggez::graphics::Image::from_path(ctx, "/robot100.png").unwrap(),
-            right_image: ggez::graphics::Image::from_path(ctx, "/robot110.png").unwrap(),
         },
         Enemy {
             pos: (window_width / 4.0, 00.0),
             velocity: (-block_size / 15.0, 0.0),
-            left_image: ggez::graphics::Image::from_path(ctx, "/robot000.png").unwrap(),
-            right_image: ggez::graphics::Image::from_path(ctx, "/robot010.png").unwrap(),
         }
     ]
 }
 
 impl Enemy {
+    pub fn new(pos: (f32, f32), velocity: (f32, f32)) -> Self {
+        Enemy {
+            pos,
+            velocity,
+        }
+    }
+
     pub fn update(&mut self, grid: &[[bool; GRID_WIDTH]; GRID_HEIGHT], block_size: f32) {
         self.velocity.1 += block_size / 50.0; // Gravitation
 
@@ -81,7 +75,11 @@ impl Enemy {
         _ctx: &mut ggez::Context
     ) -> Result<(), Box<dyn std::error::Error>> {
         for enemy in &game.enemies {
-            let image = if enemy.velocity.0 < 0.0 { &enemy.left_image } else { &enemy.right_image };
+            let image = if enemy.velocity.0 < 0.0 {
+                &game.resources.enemy_images[0]
+            } else {
+                &game.resources.enemy_images[1]
+            };
             canvas.draw(
                 image,
                 DrawParam::default()

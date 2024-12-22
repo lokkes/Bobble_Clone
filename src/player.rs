@@ -14,6 +14,9 @@ pub struct Player {
     pub pos: (f32, f32),
     pub velocity: (f32, f32),
     pub view_right: bool,
+    current_frame: usize,
+    frame_timer: f32,
+    player_state: PlayerState,
 }
 
 impl Player {
@@ -22,6 +25,9 @@ impl Player {
             pos: (x, y),
             velocity: (0.0, 0.0),
             view_right: true,
+            current_frame: 0,
+            frame_timer: 0.0,
+            player_state: PlayerState::Idle,
         }
     }
 
@@ -74,7 +80,7 @@ impl Player {
             game.player.pos.1 = 0.0;
         }
 
-        game.player_state = match (game.player.velocity.1 < 0.0, game.player.velocity.0) {
+        game.player.player_state = match (game.player.velocity.1 < 0.0, game.player.velocity.0) {
             (true, _) => PlayerState::Jumping,
             (false, v) if v > 0.0 => PlayerState::WalkingRight,
             (false, v) if v < 0.0 => PlayerState::WalkingLeft,
@@ -82,24 +88,24 @@ impl Player {
         };
 
         let delta_time = ctx.time.delta().as_secs_f32();
-        game.frame_timer += delta_time;
+        game.player.frame_timer += delta_time;
         if
-            game.frame_timer >= 0.1 &&
-            (game.player_state == PlayerState::WalkingRight ||
-                game.player_state == PlayerState::WalkingLeft)
+            game.player.frame_timer >= 0.1 &&
+            (game.player.player_state == PlayerState::WalkingRight ||
+                game.player.player_state == PlayerState::WalkingLeft)
         {
-            game.current_frame = (game.current_frame + 1) % 4;
-            game.frame_timer = 0.0;
+            game.player.current_frame = (game.player.current_frame + 1) % 4;
+            game.player.frame_timer = 0.0;
         }
     }
 
     pub fn draw(canvas: &mut ggez::graphics::Canvas, game: &mut Game) {
-        let player_image = match game.player_state {
+        let player_image = match game.player.player_state {
             PlayerState::Idle => game.resources.player_images[0].clone(),
             PlayerState::WalkingLeft =>
-                game.resources.player_images[1 + game.current_frame].clone(),
+                game.resources.player_images[1 + game.player.current_frame].clone(),
             PlayerState::WalkingRight =>
-                game.resources.player_images[5 + game.current_frame].clone(),
+                game.resources.player_images[5 + game.player.current_frame].clone(),
             PlayerState::Jumping => game.resources.player_images[9].clone(),
         };
 
