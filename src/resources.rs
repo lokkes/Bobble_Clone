@@ -7,6 +7,7 @@ pub struct Resources {
     pub bobble_image: Vec<graphics::Image>,
     pub enemy_images: Vec<graphics::Image>,
     pub menu_images: Vec<graphics::Image>,
+    pub game_over_image: graphics::Image,
 }
 
 impl Resources {
@@ -42,9 +43,12 @@ impl Resources {
             ],
             menu_images: vec![
                 graphics::Image::from_path(ctx, "/startgame.png").unwrap(),
-                graphics::Image::from_path(ctx, "/windowSize.png").unwrap(),
+                graphics::Image::from_path(ctx, "/Windowsize.png").unwrap(),
                 graphics::Image::from_path(ctx, "/Exit.png").unwrap()
             ],
+            game_over_image: graphics::Image
+                ::from_path(ctx, "/gameover.png")
+                .unwrap_or_else(|_| panic!("Game Over image not found in resources!")),
         }
     }
 }
