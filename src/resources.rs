@@ -46,9 +46,7 @@ impl Resources {
                 graphics::Image::from_path(ctx, "/Windowsize.png").unwrap(),
                 graphics::Image::from_path(ctx, "/Exit.png").unwrap()
             ],
-            game_over_image: graphics::Image
-                ::from_path(ctx, "/gameover.png")
-                .unwrap_or_else(|_| panic!("Game Over image not found in resources!")),
+            game_over_image: graphics::Image::from_path(ctx, "/gameover.png").unwrap(),
         }
     }
 }

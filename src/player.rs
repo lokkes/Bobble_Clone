@@ -31,15 +31,9 @@ impl Player {
         }
     }
 
-    pub fn update_position(game: &mut Game, ctx: &mut ggez::Context) {
+    pub fn update(game: &mut Game, ctx: &mut ggez::Context) {
         game.player.velocity.1 += game.block_size / 50.0; // Gravitation
 
-        if game.player.velocity.0 > 0.0 {
-            game.player.view_right = true;
-        }
-        if game.player.velocity.0 < 0.0 {
-            game.player.view_right = false;
-        }
         // Horizontale Bewegung prüfen
         let next_x = game.player.pos.0 + game.player.velocity.0;
         let next_y = game.player.pos.1 + game.player.velocity.1;
@@ -53,7 +47,7 @@ impl Player {
                 game.block_size
             )
         {
-            game.player.velocity.0 = 0.0;
+            // game.player.velocity.0 = 0.0;
         } else {
             if next_y > game.window_height - game.block_size {
                 game.player.pos.0 = game.player.pos.0 - game.player.velocity.0 * 0.2;
@@ -113,7 +107,7 @@ impl Player {
             &player_image,
             DrawParam::default()
                 .dest(ggez::mint::Point2 {
-                    x: game.player.pos.0 - game.block_size,
+                    x: game.player.pos.0 - game.block_size * 1.4,
                     y: game.player.pos.1 -
                     get_y_pos_correction(game.window_width, game.block_size, &player_image),
                 })

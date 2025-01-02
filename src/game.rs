@@ -5,7 +5,7 @@ use ggez::graphics::DrawParam;
 use crate::grid::{ GridConfig, GRID_HEIGHT, GRID_WIDTH };
 use crate::resources::Resources;
 use ggez::input::keyboard::{ KeyCode, KeyInput };
-use crate::player;
+use crate::{ player, utils };
 use crate::grid;
 use crate::enemy;
 use crate::bullet;
@@ -105,82 +105,53 @@ impl Game {
         self.block_size = width / (GRID_WIDTH as f32);
         ctx.gfx.set_drawable_size(width, height).unwrap();
     }
+
+    pub fn handle_collisions(&mut self) {
+        // collision Player and Enemy
+        for enemy in &mut self.enemies {
+            if
+                (self.player.pos.0 - enemy.pos.0).abs() < self.block_size &&
+                (self.player.pos.1 - enemy.pos.1).abs() < self.block_size
+            {
+                self.state = GameState::GameOver;
+            }
+        }
+
+        // collision Bullets and Enemy
+        self.bullets.retain(|bullet| {
+            let mut hit_enemy = false;
+            self.enemies.retain(|enemy| {
+                let collision =
+                    (bullet.pos.0 - enemy.pos.0).abs() < self.block_size &&
+                    (bullet.pos.1 - enemy.pos.1).abs() < self.block_size * 2.0;
+                if collision {
+                    self.score += 10;
+                    hit_enemy = true;
+                    self.bubbles.push(
+                        bubble::Bubble::new(enemy.pos, (0.0, -self.block_size / 25.0))
+                    );
+                }
+                !collision
+            });
+            !hit_enemy
+        });
+    }
 }
 
 impl EventHandler for Game {
     fn update(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         match self.state {
             GameState::Menu => {
-                // Menu logic
+                // Menülogik
             }
             GameState::Play => {
                 let delta_time = ctx.time.delta().as_secs_f32();
-                // Timer aktualisieren
-                self.enemy_spawn_timer -= delta_time;
-
-                if self.enemy_spawn_timer <= 0.0 {
-                    // Füge einen neuen Gegner hinzu
-                    self.enemies.push(
-                        enemy::Enemy::new(
-                            (100.0 + (self.enemies.len() as f32) * 50.0, 100.0),
-                            (1.0, 0.0)
-                        )
-                    );
-
-                    // Timer zurücksetzen
-                    self.enemy_spawn_timer = 10.0;
-                }
-
-                // Aktualisiere bestehende Gegner
-                for enemy in &mut self.enemies {
-                    enemy.update(&self.grid, self.block_size);
-                }
-
-                self.enemies.retain(|enemy| !enemy.is_off_screen(self.block_size));
-                player::Player::update_position(self, ctx);
-
-                // Collision with enemies
-                for enemy in &mut self.enemies {
-                    if
-                        (self.player.pos.0 - enemy.pos.0).abs() < self.block_size &&
-                        (self.player.pos.1 - enemy.pos.1).abs() < self.block_size
-                    {
-                        self.state = GameState::GameOver;
-                    }
-                }
-
-                for bullet in &mut self.bullets {
-                    bullet.update();
-                }
-
-                // Entferne Kugeln, die aus dem Bildschirm verschwinden
-                self.bullets.retain(|bullet| !bullet.is_off_screen(self.block_size));
-
-                self.bullets.retain(|bullet| {
-                    let mut hit_enemy = false;
-                    self.enemies.retain(|enemy| {
-                        let collision =
-                            (bullet.pos.0 - enemy.pos.0).abs() < self.block_size &&
-                            (bullet.pos.1 - enemy.pos.1).abs() < self.block_size * 2.0;
-                        if collision {
-                            self.score += 10;
-                            hit_enemy = true;
-
-                            self.bubbles.push(
-                                bubble::Bubble::new(enemy.pos, (0.0, -self.block_size / 25.0))
-                            );
-                        }
-                        !collision
-                    });
-                    !hit_enemy
-                });
-
-                for bubble in &mut self.bubbles {
-                    bubble.update(ctx);
-                }
+                utils::update_objects(self, ctx, delta_time);
+                self.handle_collisions();
             }
             GameState::GameOver => {}
         }
+
         // Framerate limitieren
         while ctx.time.check_update_time(60) {}
         Ok(())

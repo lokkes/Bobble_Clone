@@ -1,6 +1,6 @@
 use ggez::graphics::Image;
 
-use crate::grid::{ GRID_WIDTH, GRID_HEIGHT };
+use crate::{ enemy, game::Game, grid::{ GRID_HEIGHT, GRID_WIDTH }, player };
 
 pub fn check_collision(
     grid: &[[bool; GRID_WIDTH]; GRID_HEIGHT],
@@ -38,4 +38,27 @@ pub fn get_y_pos_correction(window_width: f32, block_size: f32, image: &Image) -
         y_pos_correction = block_size * 2.5;
     }
     y_pos_correction
+}
+
+pub fn update_objects(game: &mut Game, ctx: &mut ggez::Context, delta_time: f32) {
+    //Player
+    player::Player::update(game, ctx);
+
+    //Enemy
+    game.enemy_spawn_timer -= delta_time;
+    if game.enemy_spawn_timer <= 0.0 {
+        game.enemies.push(
+            enemy::Enemy::new((100.0 + (game.enemies.len() as f32) * 50.0, 100.0), (1.0, 0.0))
+        );
+        game.enemy_spawn_timer = 10.0; // Timer zurücksetzen
+    }
+    game.enemies.iter_mut().for_each(|enemy| enemy.update(&game.grid, game.block_size));
+    game.enemies.retain(|enemy| !enemy.is_off_screen(game.block_size));
+
+    //Bullets
+    game.bullets.iter_mut().for_each(|bullet| bullet.update());
+    game.bullets.retain(|bullet| !bullet.is_off_screen(game.block_size));
+
+    //Bubbles
+    game.bubbles.iter_mut().for_each(|bubble| bubble.update(ctx));
 }
