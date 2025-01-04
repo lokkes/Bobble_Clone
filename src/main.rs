@@ -10,6 +10,7 @@ mod utils;
 mod bullet;
 mod resources;
 mod bubble;
+mod enemy_bullet;
 
 fn main() -> GameResult {
     let (mut ctx, event_loop) = ContextBuilder::new("bobble_clone", "author_name")

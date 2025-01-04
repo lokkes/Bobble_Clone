@@ -1,6 +1,7 @@
 use ggez::graphics::Image;
+use rand::Rng;
 
-use crate::{ enemy, game::Game, grid::{ GRID_HEIGHT, GRID_WIDTH }, player };
+use crate::{ enemy, enemy_bullet, game::Game, grid::{ GRID_HEIGHT, GRID_WIDTH }, player, utils };
 
 pub fn check_collision(
     grid: &[[bool; GRID_WIDTH]; GRID_HEIGHT],
@@ -61,4 +62,28 @@ pub fn update_objects(game: &mut Game, ctx: &mut ggez::Context, delta_time: f32)
 
     //Bubbles
     game.bubbles.iter_mut().for_each(|bubble| bubble.update(ctx));
+
+    // //enemy_bubbles
+    for enemy in &game.enemies {
+        if utils::random_f32() < 0.005 {
+            game.enemy_bullets.push(enemy_bullet::EnemyBullet {
+                pos: enemy.pos,
+                velocity: (
+                    if enemy.velocity.0 > 0.0 {
+                        game.block_size / 3.0
+                    } else {
+                        -(game.block_size / 3.0)
+                    },
+                    0.0,
+                ),
+            });
+        }
+    }
+    game.enemy_bullets.iter_mut().for_each(|bullet| bullet.update());
+    game.enemy_bullets.retain(|bullet| !bullet.is_off_screen());
+}
+
+pub fn random_f32() -> f32 {
+    let mut rng = rand::thread_rng();
+    rng.gen::<f32>()
 }

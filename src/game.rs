@@ -10,6 +10,7 @@ use crate::grid;
 use crate::enemy;
 use crate::bullet;
 use crate::bubble;
+use crate::enemy_bullet;
 use ggez::graphics;
 
 #[derive(PartialEq)]
@@ -26,13 +27,14 @@ pub struct Game {
     pub enemies: Vec<enemy::Enemy>,
     pub bullets: Vec<bullet::Bullet>,
     pub bubbles: Vec<bubble::Bubble>,
+    pub enemy_bullets: Vec<enemy_bullet::EnemyBullet>,
     pub grid: [[bool; GRID_WIDTH]; GRID_HEIGHT],
     pub enemy_spawn_timer: f32,
     pub resources: Resources,
     pub window_width: f32,
     pub window_height: f32,
-    pub selected_option: usize, // Aktuelle Menüoption (Index)
-    pub selected_size: usize, // Ausgewählte Fenstergröße
+    pub selected_menu_option: usize,
+    pub selected_window_size: usize,
     pub window_sizes: Vec<(f32, f32)>,
     pub block_size: f32,
 }
@@ -74,13 +76,14 @@ impl Game {
             enemies,
             bullets: vec![],
             bubbles: vec![],
+            enemy_bullets: vec![],
             grid,
             enemy_spawn_timer: 10.0,
             resources,
             window_width: width,
             window_height: height,
-            selected_option: 0,
-            selected_size: 0,
+            selected_menu_option: 0,
+            selected_window_size: 0,
             window_sizes: vec![(800.0, 480.0), (1024.0, 768.0), (1280.0, 720.0), (1920.0, 1080.0)],
             block_size,
         }
@@ -96,10 +99,11 @@ impl Game {
         );
         self.bullets = vec![];
         self.bubbles = vec![];
+        self.enemy_bullets = vec![];
     }
 
     fn set_window_size(&mut self, ctx: &mut ggez::Context) {
-        let (width, height) = self.window_sizes[self.selected_size];
+        let (width, height) = self.window_sizes[self.selected_window_size];
         self.window_width = width;
         self.window_height = height;
         self.block_size = width / (GRID_WIDTH as f32);
@@ -135,6 +139,16 @@ impl Game {
             });
             !hit_enemy
         });
+
+        //collision enemy_bullets and player
+        for bullet in &self.enemy_bullets {
+            if
+                (bullet.pos.0 - self.player.pos.0).abs() < self.block_size &&
+                (bullet.pos.1 - self.player.pos.1).abs() < self.block_size
+            {
+                self.state = GameState::GameOver;
+            }
+        }
     }
 }
 
@@ -165,7 +179,7 @@ impl EventHandler for Game {
                 for (i, image) in self.resources.menu_images.clone().into_iter().enumerate() {
                     let x = self.window_width / 2.0 - (image.width() as f32) / 2.0;
                     let y = 150.0 + (i as f32) * 100.0;
-                    let color = if i == self.selected_option {
+                    let color = if i == self.selected_menu_option {
                         graphics::Color::WHITE // Highlighted option
                     } else {
                         graphics::Color::new(0.5, 0.5, 0.5, 1.0) // Gray for non-highlighted option
@@ -177,8 +191,8 @@ impl EventHandler for Game {
                     );
                 }
 
-                if self.selected_option == 1 {
-                    let (width, height) = self.window_sizes[self.selected_size];
+                if self.selected_menu_option == 1 {
+                    let (width, height) = self.window_sizes[self.selected_window_size];
                     let text = graphics::Text::new(
                         format!(
                             "Window Size: {}x{} (Use Left/Right to change)",
@@ -198,6 +212,7 @@ impl EventHandler for Game {
                 let _ = enemy::Enemy::draw(&mut canvas, self, ctx);
                 let _ = bullet::Bullet::draw(&mut canvas, self);
                 let _ = bubble::Bubble::draw(&mut canvas, self);
+                let _ = enemy_bullet::EnemyBullet::draw(&mut canvas, self);
 
                 let score_text = ggez::graphics::Text::new(format!("Score: {}", self.score));
                 canvas.draw(
@@ -240,30 +255,30 @@ impl EventHandler for Game {
                             self.state = GameState::Play;
                         }
                         KeyCode::Up => {
-                            if self.selected_option > 0 {
-                                self.selected_option -= 1;
+                            if self.selected_menu_option > 0 {
+                                self.selected_menu_option -= 1;
                             }
                         }
                         KeyCode::Down => {
-                            if self.selected_option < self.resources.menu_images.len() - 1 {
-                                self.selected_option += 1;
+                            if self.selected_menu_option < self.resources.menu_images.len() - 1 {
+                                self.selected_menu_option += 1;
                             }
                         }
                         KeyCode::Left => {
-                            if self.selected_option == 1 && self.selected_size > 0 {
-                                self.selected_size -= 1;
+                            if self.selected_menu_option == 1 && self.selected_window_size > 0 {
+                                self.selected_window_size -= 1;
                             }
                         }
                         KeyCode::Right => {
                             if
-                                self.selected_option == 1 &&
-                                self.selected_size < self.window_sizes.len() - 1
+                                self.selected_menu_option == 1 &&
+                                self.selected_window_size < self.window_sizes.len() - 1
                             {
-                                self.selected_size += 1;
+                                self.selected_window_size += 1;
                             }
                         }
                         KeyCode::Return => {
-                            match self.selected_option {
+                            match self.selected_menu_option {
                                 0 => {
                                     self.state = GameState::Play;
                                 }

@@ -8,6 +8,7 @@ pub struct Resources {
     pub enemy_images: Vec<graphics::Image>,
     pub menu_images: Vec<graphics::Image>,
     pub game_over_image: graphics::Image,
+    pub enemy_bullet_image: Vec<graphics::Image>,
 }
 
 impl Resources {
@@ -47,6 +48,12 @@ impl Resources {
                 graphics::Image::from_path(ctx, "/Exit.png").unwrap()
             ],
             game_over_image: graphics::Image::from_path(ctx, "/gameover.png").unwrap(),
+            enemy_bullet_image: vec![
+                graphics::Image::from_path(ctx, "/bolt00.png").unwrap(),
+                graphics::Image::from_path(ctx, "/bolt01.png").unwrap(),
+                graphics::Image::from_path(ctx, "/bolt10.png").unwrap(),
+                graphics::Image::from_path(ctx, "/bolt11.png").unwrap()
+            ],
         }
     }
 }
