@@ -149,6 +149,21 @@ impl Game {
                 self.state = GameState::GameOver;
             }
         }
+
+        //collision enemy_bullet and player_bullet
+        self.bullets.retain(|bullet| {
+            let mut hit_bullet = false;
+            self.enemy_bullets.retain(|enemy_bullets| {
+                let collision =
+                    (bullet.pos.0 - enemy_bullets.pos.0).abs() < self.block_size &&
+                    (bullet.pos.1 - enemy_bullets.pos.1).abs() < self.block_size * 2.0;
+                if collision {
+                    hit_bullet = true;
+                }
+                !collision
+            });
+            !hit_bullet
+        });
     }
 }
 
