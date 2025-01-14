@@ -24,7 +24,8 @@ impl Resources {
                 graphics::Image::from_path(ctx, "/run11.png").unwrap(),
                 graphics::Image::from_path(ctx, "/run12.png").unwrap(),
                 graphics::Image::from_path(ctx, "/run13.png").unwrap(),
-                graphics::Image::from_path(ctx, "/jump0.png").unwrap()
+                graphics::Image::from_path(ctx, "/jump0.png").unwrap(),
+                graphics::Image::from_path(ctx, "/jump1.png").unwrap()
             ],
             grid_image: graphics::Image::from_path(ctx, "/block0.png").unwrap(),
             bullet_image: graphics::Image::from_path(ctx, "/orb6.png").unwrap(),

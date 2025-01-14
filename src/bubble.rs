@@ -20,7 +20,6 @@ impl Bubble {
     }
 
     pub fn update(&mut self, ctx: &mut ggez::Context) {
-        // self.pos.0 += self.velocity.0;
         self.pos.1 += self.velocity.1;
 
         let delta_time = ctx.time.delta().as_secs_f32();

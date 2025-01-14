@@ -100,7 +100,13 @@ impl Player {
                 game.resources.player_images[1 + game.player.current_frame].clone(),
             PlayerState::WalkingRight =>
                 game.resources.player_images[5 + game.player.current_frame].clone(),
-            PlayerState::Jumping => game.resources.player_images[9].clone(),
+            PlayerState::Jumping => {
+                if game.player.view_right {
+                    game.resources.player_images[10].clone()
+                } else {
+                    game.resources.player_images[9].clone()
+                }
+            }
         };
 
         canvas.draw(
