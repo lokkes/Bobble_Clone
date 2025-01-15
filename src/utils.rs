@@ -49,7 +49,7 @@ pub fn update_objects(game: &mut Game, ctx: &mut ggez::Context, delta_time: f32)
     game.enemy_spawn_timer -= delta_time;
     if game.enemy_spawn_timer <= 0.0 {
         game.enemies.push(
-            enemy::Enemy::new((100.0 + (game.enemies.len() as f32) * 50.0, 100.0), (1.0, 0.0))
+            enemy::Enemy::new((random_f32() * game.block_size * 10.0, game.block_size), (1.0, 0.0))
         );
         game.enemy_spawn_timer = 10.0; // Timer zurücksetzen
     }

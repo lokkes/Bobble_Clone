@@ -1,5 +1,6 @@
 use std::process::exit;
 
+use ggez::audio::{SoundSource, Source};
 use ggez::event::EventHandler;
 use ggez::graphics::DrawParam;
 use crate::grid::{ GridConfig, GRID_HEIGHT, GRID_WIDTH };
@@ -37,6 +38,7 @@ pub struct Game {
     pub selected_window_size: usize,
     pub window_sizes: Vec<(f32, f32)>,
     pub block_size: f32,
+    pub music: Source,
 }
 
 impl Game {
@@ -68,6 +70,8 @@ impl Game {
         let block_size = width / (GRID_WIDTH as f32);
         let enemies = enemy::create_enemies(width, height, block_size);
         let resources = Resources::load(ctx);
+        let mut music = Source::new(ctx, "/sounds/theme.ogg").unwrap();
+        music.set_repeat(true);
 
         Game {
             state: GameState::Menu,
@@ -86,6 +90,7 @@ impl Game {
             selected_window_size: 0,
             window_sizes: vec![(800.0, 480.0), (1024.0, 768.0), (1280.0, 720.0), (1920.0, 1080.0)],
             block_size,
+            music
         }
     }
 
@@ -267,6 +272,7 @@ impl EventHandler for Game {
                     match keycode {
                         KeyCode::Space => {
                             self.reset(ctx);
+                            let _ = self.music.play(ctx);
                             self.state = GameState::Play;
                         }
                         KeyCode::Up => {
